@@ -1,0 +1,1927 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KollyMaja – Tamil Movie Ranking Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+Tamil:wght@400;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --red: #e8002d; --gold: #f5c518; --darker: #050508; --surface: #12121a;
+  --surface2: #1c1c28; --surface3: #252535; --text: #f0eef8;
+  --muted: #8884a0; --border: #2e2e44; --green: #22c55e;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--darker); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); }
+.screen { display: none; position: fixed; inset: 0; z-index: 1; overflow-y: auto; overflow-x: hidden; background: var(--darker); }
+.screen.active { display: block; }
+.screen:not(.active) { pointer-events: none; visibility: hidden; }
+
+.logo { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 8vw, 5rem); letter-spacing: 0.08em; line-height: 1; background: linear-gradient(135deg, var(--gold) 0%, var(--red) 60%, #ff6b35 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.logo-sub { font-size: 0.75rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 32px; border: none; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.03em; }
+.btn-primary { background: var(--red); color: white; }
+.btn-primary:hover { background: #c00025; transform: translateY(-1px); }
+.btn-gold { background: var(--gold); color: #0a0a0f; }
+.btn-gold:hover { background: #e0b015; transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
+.btn-ghost:hover { background: var(--surface2); }
+.btn-sm { padding: 8px 18px; font-size: 0.85rem; }
+
+.input-field { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 12px 16px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; width: 100%; transition: border-color 0.2s; outline: none; }
+.input-field:focus { border-color: var(--red); }
+.input-field::placeholder { color: var(--muted); }
+select.input-field { cursor: pointer; appearance: none; }
+.select-wrap { position: relative; }
+.select-wrap::after { content: '▾'; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+
+/* ===== LANDING – CINEMATIC HERO ===== */
+#screen-landing {
+  min-height: 100vh; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 40px 20px; text-align: center; isolation: isolate;
+}
+
+/* Radial spotlight glow */
+#screen-landing::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(232,0,45,0.12) 0%, transparent 70%),
+              radial-gradient(ellipse 50% 40% at 20% 80%, rgba(245,197,24,0.07) 0%, transparent 60%),
+              radial-gradient(ellipse 40% 30% at 80% 10%, rgba(245,197,24,0.05) 0%, transparent 60%);
+}
+
+/* Diagonal film-strip line */
+.landing-filmstrip {
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none; overflow: hidden; z-index: 0;
+}
+.landing-filmstrip::before {
+  content: '';
+  position: absolute; top: -20%; left: -10%; width: 140%; height: 140%;
+  background: repeating-linear-gradient(
+    -55deg,
+    transparent 0px, transparent 60px,
+    rgba(245,197,24,0.02) 60px, rgba(245,197,24,0.02) 62px
+  );
+}
+
+/* Star cards — floating polaroids */
+.star-cards {
+  position: absolute; inset: 0; pointer-events: none; z-index: 0;
+}
+.star-card {
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 10px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: floatCard 6s ease-in-out infinite;
+  opacity: 0; animation-fill-mode: both;
+}
+.star-card-face {
+  width: 64px; height: 64px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2rem; font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.05em; line-height: 1;
+  background: var(--surface2);
+  position: relative; overflow: hidden;
+}
+.star-card-face::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, transparent 60%);
+}
+.star-card-name { font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.star-card-role { font-size: 0.55rem; color: var(--red); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* Card positions & delays */
+.star-card:nth-child(1)  { top: 8%;  left: 3%;  transform: rotate(-8deg); animation-delay: 0s;    animation-duration: 7s;   }
+.star-card:nth-child(2)  { top: 5%;  right: 4%; transform: rotate(6deg);  animation-delay: 1s;    animation-duration: 8s;   }
+.star-card:nth-child(3)  { top: 35%; left: 1%;  transform: rotate(-4deg); animation-delay: 0.5s;  animation-duration: 6.5s; }
+.star-card:nth-child(4)  { top: 32%; right: 2%; transform: rotate(7deg);  animation-delay: 1.5s;  animation-duration: 7.5s; }
+.star-card:nth-child(5)  { bottom: 10%; left: 4%;  transform: rotate(5deg);  animation-delay: 0.8s;  animation-duration: 6s;   }
+.star-card:nth-child(6)  { bottom: 8%;  right: 3%; transform: rotate(-6deg); animation-delay: 1.8s;  animation-duration: 8.5s; }
+.star-card:nth-child(7)  { top: 60%; left: 0%;  transform: rotate(-3deg); animation-delay: 2.2s;  animation-duration: 7s;   }
+.star-card:nth-child(8)  { top: 15%; left: 18%; transform: rotate(4deg);  animation-delay: 2.8s;  animation-duration: 9s;   }
+.star-card:nth-child(9)  { top: 18%; right: 18%;transform: rotate(-5deg); animation-delay: 3.2s;  animation-duration: 6.8s; }
+.star-card:nth-child(10) { bottom: 20%; left: 16%; transform: rotate(3deg); animation-delay: 3.8s;  animation-duration: 7.2s; }
+
+@keyframes floatCard {
+  0%   { opacity: 0; transform: translateY(12px) rotate(var(--r, 0deg)); }
+  15%  { opacity: 1; }
+  50%  { transform: translateY(-8px) rotate(var(--r, 0deg)); }
+  85%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(12px) rotate(var(--r, 0deg)); }
+}
+
+/* Center hero content */
+.landing-hero { position: relative; z-index: 2; max-width: 560px; }
+
+.landing-eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(232,0,45,0.1); border: 1px solid rgba(232,0,45,0.3);
+  color: var(--red); font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase;
+  padding: 6px 16px; border-radius: 100px; margin-bottom: 28px;
+  animation: fadeUp 0.6s ease both;
+}
+.eyebrow-dot { width: 6px; height: 6px; background: var(--red); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
+
+.landing-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(4.5rem, 18vw, 9rem);
+  letter-spacing: 0.04em; line-height: 0.9;
+  background: linear-gradient(160deg, #fff5d0 0%, var(--gold) 35%, var(--red) 70%, #ff4060 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: fadeUp 0.7s 0.1s ease both;
+  filter: drop-shadow(0 0 40px rgba(232,0,45,0.25));
+}
+.landing-title-sub {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  letter-spacing: 0.35em; color: var(--muted);
+  margin-top: 4px; margin-bottom: 20px;
+  animation: fadeUp 0.7s 0.2s ease both;
+}
+
+/* Scrolling categories ticker */
+.landing-ticker {
+  display: flex; gap: 0; overflow: hidden; margin: 0 auto 28px;
+  mask-image: linear-gradient(90deg, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, black 15%, black 85%, transparent);
+  animation: fadeUp 0.7s 0.3s ease both;
+}
+.ticker-track {
+  display: flex; gap: 12px; white-space: nowrap;
+  animation: tickerMove 20s linear infinite;
+}
+.ticker-track:nth-child(2) { animation-delay: -10s; }
+.ticker-item {
+  padding: 5px 14px; border: 1px solid var(--border);
+  border-radius: 100px; font-size: 0.75rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted); flex-shrink: 0;
+  background: var(--surface2);
+}
+.ticker-item.hot { border-color: var(--red); color: var(--red); background: rgba(232,0,45,0.08); }
+@keyframes tickerMove { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+.landing-desc {
+  color: var(--muted); line-height: 1.7; font-size: 0.95rem;
+  max-width: 380px; margin: 0 auto 36px;
+  animation: fadeUp 0.7s 0.35s ease both;
+}
+
+.landing-actions {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  animation: fadeUp 0.7s 0.45s ease both;
+}
+.btn-landing-primary {
+  background: var(--red); color: white;
+  padding: 16px 36px; font-size: 1rem; font-weight: 700;
+  border-radius: 8px; border: none; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; letter-spacing: 0.04em;
+  transition: all 0.2s; display: inline-flex; align-items: center; gap: 10px;
+  box-shadow: 0 0 0 0 rgba(232,0,45,0.4);
+  animation: ctaPulse 3s 2s ease infinite;
+}
+.btn-landing-primary:hover { background: #c00025; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(232,0,45,0.35); }
+.btn-landing-ghost {
+  background: transparent; color: var(--text); padding: 16px 36px; font-size: 1rem; font-weight: 600;
+  border-radius: 8px; border: 1px solid var(--border); cursor: pointer;
+  font-family: 'DM Sans', sans-serif; letter-spacing: 0.04em;
+  transition: all 0.2s; display: inline-flex; align-items: center; gap: 10px;
+}
+.btn-landing-ghost:hover { background: var(--surface2); border-color: var(--muted); transform: translateY(-2px); }
+@keyframes ctaPulse { 0%,100%{box-shadow:0 0 0 0 rgba(232,0,45,0.4)} 50%{box-shadow:0 0 0 10px rgba(232,0,45,0)} }
+
+/* Stats strip */
+.landing-stats {
+  display: flex; gap: 32px; margin-top: 40px; flex-wrap: wrap; justify-content: center;
+  animation: fadeUp 0.7s 0.55s ease both;
+}
+.stat-item { text-align: center; }
+.stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.05em; color: var(--gold); line-height: 1; }
+.stat-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
+.stat-divider { width: 1px; background: var(--border); align-self: stretch; opacity: 0.5; }
+
+@keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+
+/* Bottom film holes decoration */
+.film-holes {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 40px;
+  display: flex; align-items: center; justify-content: space-around;
+  pointer-events: none; z-index: 1; opacity: 0.15;
+}
+.film-hole { width: 18px; height: 14px; border: 2px solid var(--muted); border-radius: 3px; }
+
+/* ===== END LANDING ===== */
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 32px; width: 100%; max-width: 480px; }
+.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.06em; margin-bottom: 24px; color: var(--gold); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+
+/* LOBBY */
+#screen-lobby { min-height: 100vh; padding: 32px 20px; max-width: 800px; margin: 0 auto; }
+.lobby-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+.room-code { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 20px; text-align: center; }
+.room-code-label { font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+.room-code-value { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; letter-spacing: 0.2em; color: var(--gold); }
+.players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 32px; }
+.player-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.player-card.host { border-color: var(--gold); }
+.player-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin: 0 auto 10px; }
+.player-name { font-size: 0.9rem; font-weight: 600; }
+.player-status { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.setting-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.setting-label { font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.chip { padding: 6px 14px; border-radius: 100px; font-size: 0.8rem; border: 1px solid var(--border); background: var(--surface3); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
+.chip.active { background: var(--red); border-color: var(--red); color: white; }
+.category-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* RANKING */
+#screen-ranking { min-height: 100vh; display: flex; flex-direction: column; }
+.ranking-topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; position: sticky; top: 0; z-index: 10; }
+.round-info { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.round-category { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.05em; color: var(--gold); }
+.timer-ring { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+.timer-ring svg { transform: rotate(-90deg); }
+.timer-ring-track { fill: none; stroke: var(--border); stroke-width: 4; }
+.timer-ring-fill { fill: none; stroke: var(--red); stroke-width: 4; stroke-dasharray: 138.2; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.5s; stroke-linecap: round; }
+.timer-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; }
+
+.ranking-main { flex: 1; display: flex; height: calc(100vh - 72px); }
+.ranking-left { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px; }
+.ranking-right { width: 280px; border-left: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+
+/* THE ITEM CARD */
+.item-counter { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.item-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; width: 100%; padding: 28px; position: relative; overflow: hidden; }
+.item-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--red), var(--gold)); }
+.item-card-eyebrow { font-size: 0.68rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--red); margin-bottom: 8px; font-weight: 600; }
+.item-card-name { font-family: 'Bebas Neue', sans-serif; font-size: clamp(1.6rem, 4vw, 2.6rem); letter-spacing: 0.04em; line-height: 1.1; color: var(--text); }
+.item-card-sub { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 5px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 100px; font-size: 0.78rem; color: var(--muted); font-style: normal; letter-spacing: 0.03em; }
+.item-works { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.item-works-label { font-size: 0.65rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.item-works-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.item-fact { margin-top: 12px; padding: 10px 14px; background: rgba(245,197,24,0.07); border: 1px solid rgba(245,197,24,0.2); border-radius: 8px; font-size: 0.8rem; color: #c8b87a; line-height: 1.5; }
+.fact-icon { margin-right: 4px; }
+.work-tag { background: var(--surface2); border: 1px solid var(--border); padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; color: var(--muted); }
+
+/* RANK PICKER */
+.rank-picker-label { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.rank-picker { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: 100%; }
+.rank-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 16px 8px; border-radius: 8px; font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.05em; cursor: pointer; transition: all 0.15s; text-align: center; }
+.rank-btn:hover:not(.taken) { background: var(--red); border-color: var(--red); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(232,0,45,0.3); }
+.rank-btn.taken { opacity: 0.22; cursor: not-allowed; background: var(--surface3); }
+
+/* ALL RANKED */
+.all-ranked-msg { text-align: center; padding: 28px; background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.3); border-radius: 12px; width: 100%; }
+.all-ranked-msg .big { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--green); letter-spacing: 0.08em; }
+.all-ranked-msg p { color: var(--muted); font-size: 0.88rem; margin-top: 8px; }
+
+/* ENTER ANIM */
+@keyframes cardIn { from{opacity:0;transform:translateY(16px) scale(0.97)} to{opacity:1;transform:none} }
+.card-enter { animation: cardIn 0.28s cubic-bezier(0.22,1,0.36,1) both; }
+
+/* SUMMARY PANEL */
+.summary-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
+.ranked-summary { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; }
+.ranked-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; font-size: 0.8rem; line-height: 1.3; animation: popIn 0.22s cubic-bezier(0.34,1.56,0.64,1) both; }
+@keyframes popIn { from{opacity:0;transform:scale(0.85) translateY(6px)} to{opacity:1;transform:none} }
+.ranked-item-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--red); width: 22px; flex-shrink: 0; text-align: center; }
+.ranked-item-num.r1{color:var(--gold)} .ranked-item-num.r2{color:#c0c0c0} .ranked-item-num.r3{color:#cd7f32}
+.ranked-item-text { flex: 1; }
+.ranked-ph { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px dashed var(--border); border-radius: 7px; opacity: 0.35; }
+.ranked-ph-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--muted); width: 22px; text-align: center; }
+.ranked-ph-text { font-size: 0.78rem; color: var(--muted); font-style: italic; }
+.online-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 5px var(--green); display: inline-block; }
+
+/* CHAT */
+.chat-area { border-top: 1px solid var(--border); display: flex; flex-direction: column; max-height: 220px; }
+.chat-header-sm { padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.chat-messages { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; font-size: 0.82rem; }
+.chat-msg { line-height: 1.5; }
+.chat-msg .sender { font-weight: 600; font-size: 0.76rem; }
+.chat-msg.system { color: var(--muted); font-style: italic; font-size: 0.74rem; text-align: center; }
+.chat-msg.system.event { color: var(--gold); font-style: normal; background: rgba(245,197,24,0.06); border-radius: 4px; padding: 3px 8px; }
+.chat-input-row { display: flex; gap: 6px; padding: 8px 10px; }
+.chat-input { flex: 1; background: var(--surface3); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; outline: none; }
+.chat-input:focus { border-color: var(--muted); }
+.chat-send { background: var(--surface3); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+.chat-send:hover { background: var(--surface2); }
+
+/* WAITING */
+#screen-waiting { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; text-align: center; }
+.waiting-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; letter-spacing: 0.08em; color: var(--gold); margin-bottom: 12px; }
+.players-status { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 28px; max-width: 500px; }
+.player-chip { padding: 8px 16px; border-radius: 100px; font-size: 0.85rem; border: 1px solid var(--border); background: var(--surface2); color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.player-chip.done { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.06); }
+
+/* RESULTS */
+#screen-results { min-height: 100vh; padding: 32px 20px; max-width: 1000px; margin: 0 auto; }
+.results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+.results-title { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; letter-spacing: 0.06em; }
+.results-subtitle { color: var(--muted); font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.prog-wrap { background: var(--surface3); border-radius: 100px; height: 4px; margin-bottom: 24px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--red); border-radius: 100px; transition: width 0.4s; }
+.results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; animation: fadeIn 0.35s ease both; }
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.result-card-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.result-player-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.06em; }
+.heart-btn { background: none; border: none; cursor: pointer; font-size: 1.2rem; padding: 4px; transition: transform 0.2s; }
+.heart-btn:hover { transform: scale(1.3); }
+.result-list { padding: 8px 0; }
+.result-item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 18px; font-size: 0.82rem; line-height: 1.4; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.result-item:last-child { border-bottom: none; }
+.result-rank { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--muted); width: 24px; flex-shrink: 0; padding-top: 1px; }
+.result-rank.r1{color:var(--gold)} .result-rank.r2{color:#c0c0c0} .result-rank.r3{color:#cd7f32}
+.result-footer { padding: 10px 18px; border-top: 1px solid var(--border); background: var(--surface2); }
+.scoring-row { display: flex; gap: 8px; align-items: center; }
+.score-input { width: 58px; background: var(--surface3); border: 1px solid var(--border); color: var(--text); padding: 6px 8px; border-radius: 5px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; text-align: center; outline: none; }
+.score-input:focus { border-color: var(--gold); }
+.score-label { font-size: 0.75rem; color: var(--muted); }
+.hearts-panel { margin-top: 12px; padding: 16px 18px; background: var(--surface2); border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; }
+
+/* LEADERBOARD */
+#screen-leaderboard { min-height: 100vh; padding: 32px 20px; max-width: 640px; margin: 0 auto; }
+.lb-title { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 0.08em; text-align: center; background: linear-gradient(135deg, var(--gold), var(--red)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.lb-list { display: grid; gap: 10px; margin-top: 24px; }
+.lb-item { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 20px; animation: slideUp 0.4s ease both; }
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.lb-item.top1{border-color:var(--gold);background:rgba(245,197,24,0.05)} .lb-item.top2{border-color:#888} .lb-item.top3{border-color:#cd7f32}
+.lb-rank { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--muted); width: 36px; text-align: center; flex-shrink: 0; }
+.lb-rank.r1{color:var(--gold)} .lb-rank.r2{color:#c0c0c0} .lb-rank.r3{color:#cd7f32}
+.lb-name { flex: 1; font-size: 1.1rem; font-weight: 600; }
+.lb-score { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--gold); }
+.lb-score-lbl { font-size: 0.72rem; color: var(--muted); }
+
+/* TAGS */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; }
+.tag-red{background:rgba(232,0,45,0.2);color:var(--red)} .tag-gold{background:rgba(245,197,24,0.15);color:var(--gold)} .tag-green{background:rgba(34,197,94,0.15);color:var(--green)}
+
+::-webkit-scrollbar{width:5px} ::-webkit-scrollbar-track{background:transparent} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+@media(max-width:680px){
+  .ranking-main{flex-direction:column;height:auto} .ranking-right{width:100%;border-left:none;border-top:1px solid var(--border);height:320px} .settings-grid{grid-template-columns:1fr} .results-grid{grid-template-columns:1fr} .rank-picker{grid-template-columns:repeat(5,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- LANDING -->
+<div id="screen-landing" class="screen active">
+
+  <!-- Background film strip texture -->
+  <div class="landing-filmstrip"></div>
+
+  <!-- Floating star polaroid cards -->
+  <div class="star-cards" id="star-cards-container">
+    <!-- cards injected by JS -->
+  </div>
+
+  <!-- Film holes at bottom -->
+  <div class="film-holes" id="film-holes"></div>
+
+  <!-- Center hero -->
+  <div class="landing-hero">
+    <div class="landing-eyebrow">
+      <span class="eyebrow-dot"></span>
+      Tamil Movie Ranking Game
+    </div>
+
+    <div class="landing-title">KollyMaja</div>
+    <div class="landing-title-sub">Rank · Reveal · Roast</div>
+
+    <!-- Scrolling categories ticker -->
+    <div class="landing-ticker">
+      <div class="ticker-track">
+        <span class="ticker-item hot">🎬 Actors</span>
+        <span class="ticker-item">🎤 Songs</span>
+        <span class="ticker-item hot">🎭 Dialogues</span>
+        <span class="ticker-item">🎵 Music Directors</span>
+        <span class="ticker-item hot">👸 Actresses</span>
+        <span class="ticker-item">🎪 Comedians</span>
+        <span class="ticker-item hot">🎥 Directors</span>
+        <span class="ticker-item">🎭 Characters</span>
+        <span class="ticker-item hot">🍿 Movies</span>
+        <span class="ticker-item">🎬 Actors</span>
+        <span class="ticker-item">🎤 Songs</span>
+        <span class="ticker-item hot">🎭 Dialogues</span>
+        <span class="ticker-item">🎵 Music Directors</span>
+        <span class="ticker-item hot">👸 Actresses</span>
+        <span class="ticker-item">🎪 Comedians</span>
+        <span class="ticker-item hot">🎥 Directors</span>
+        <span class="ticker-item">🎭 Characters</span>
+        <span class="ticker-item hot">🍿 Movies</span>
+      </div>
+    </div>
+
+    <p class="landing-desc">One name appears at a time. Assign it a rank, lock it in, and move on. Then see how your crew really feels about Kollywood.</p>
+
+    <div class="landing-actions">
+      <button class="btn-landing-primary" onclick="openModal('create')">🎬 Create Room</button>
+      <button class="btn-landing-ghost" onclick="openModal('join')">🔗 Join Room</button>
+    </div>
+
+    <div class="landing-stats">
+      <div class="stat-item"><div class="stat-num">9</div><div class="stat-label">Categories</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><div class="stat-num">900+</div><div class="stat-label">Items</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><div class="stat-num">9</div><div class="stat-label">Max Players</div></div>
+      <div class="stat-divider"></div>
+      <div class="stat-item"><div class="stat-num">9</div><div class="stat-label">Max Rounds</div></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- LOBBY -->
+<div id="screen-lobby" class="screen">
+  <div style="max-width:800px;margin:0 auto;padding:32px 20px">
+    <div class="lobby-header">
+      <div><div class="logo" style="font-size:2rem">KollyMaja</div><div id="lobby-sub" class="logo-sub"></div></div>
+      <div class="room-code"><div class="room-code-label">Room Code</div><div class="room-code-value" id="lobby-code">—</div></div>
+    </div>
+    <div id="lobby-players" class="players-grid"></div>
+    <div id="host-settings" style="display:none">
+      <div class="setting-label" style="margin-bottom:12px">⚙️ Game Settings</div>
+      <div class="settings-grid">
+        <div class="setting-card"><div class="setting-label">Rounds</div><div class="select-wrap"><select id="rounds-sel" class="input-field" onchange="G.rounds=+this.value"><option value="3">3 Rounds</option><option value="4">4 Rounds</option><option value="5" selected>5 Rounds</option><option value="6">6 Rounds</option><option value="7">7 Rounds</option><option value="8">8 Rounds</option><option value="9">9 Rounds</option></select></div></div>
+        <div class="setting-card"><div class="setting-label">Time per Round</div><div class="select-wrap"><select id="time-sel" class="input-field" onchange="G.timePerRound=+this.value"><option value="45">45 sec</option><option value="60" selected>60 sec</option><option value="90">90 sec</option><option value="120">2 min</option></select></div></div>
+      </div>
+      <div class="setting-card" style="margin-bottom:20px"><div class="setting-label" style="margin-bottom:12px">Categories</div><div class="category-chips" id="cat-chips"></div></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+        <button class="btn btn-gold" onclick="startGame()">▶ Start Game</button>
+        <button class="btn btn-ghost" onclick="randomStart()" title="Picks categories randomly for you">🎲 Random</button>
+      </div>
+    </div>
+    <div id="guest-wait" style="display:none"><div class="setting-card"><div style="color:var(--muted);font-size:0.9rem">⏳ Waiting for host to start…</div></div></div>
+  </div>
+</div>
+
+<!-- RANKING -->
+<div id="screen-ranking" class="screen">
+  <div class="ranking-topbar">
+    <div><div class="round-info" id="rnd-lbl">Round 1 of 5</div><div class="round-category" id="rnd-cat">Tamil Actors</div></div>
+    <div class="timer-ring"><svg width="56" height="56" viewBox="0 0 56 56"><circle class="timer-ring-track" cx="28" cy="28" r="22"/><circle class="timer-ring-fill" id="tr-fill" cx="28" cy="28" r="22"/></svg><div class="timer-num" id="tr-num">60</div></div>
+    <span class="tag tag-gold" id="prog-tag">0 / 10</span>
+  </div>
+  <div class="ranking-main">
+    <div class="ranking-left" id="ranking-left"><!-- filled by JS --></div>
+    <div class="ranking-right">
+      <div class="summary-header"><span>Your Ranking</span><span class="tag tag-gold" id="sum-tag">0/10</span></div>
+      <div class="ranked-summary" id="ranked-summary"><!-- placeholders --></div>
+      <div class="chat-area">
+        <div class="chat-header-sm"><span class="online-dot"></span> Chat</div>
+        <div class="chat-messages" id="chat-msgs" style="height:100px"></div>
+        <div class="chat-input-row"><input class="chat-input" id="chat-inp" placeholder="Chat…" onkeydown="chatKey(event)"><button class="chat-send" onclick="sendChat()">➤</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WAITING -->
+<div id="screen-waiting" class="screen">
+  <div class="tag tag-green" style="margin-bottom:16px">✓ Submitted!</div>
+  <div class="waiting-title">Waiting for others…</div>
+  <p style="color:var(--muted);font-size:0.9rem">Once everyone submits or time runs out, results will be revealed.</p>
+  <div class="players-status" id="wait-players"></div>
+</div>
+
+<!-- RESULTS -->
+<!-- RESULTS REVEAL — all rankings shown at once, everyone scores simultaneously -->
+<div id="screen-results" class="screen">
+
+  <!-- Top bar -->
+  <div class="ranking-topbar" style="position:sticky;top:0;z-index:10">
+    <div>
+      <div class="round-info" id="res-rnd">Round 1 of 5</div>
+      <div class="round-category" id="res-cat">Tamil Actors</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="tag tag-gold" id="res-scores-left" style="display:none">Score everyone first!</span>
+      <button class="btn btn-primary" onclick="nextRound()" id="next-btn" style="display:none">Next Round →</button>
+    </div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="prog-wrap" style="margin:0"><div class="prog-fill" id="res-prog"></div></div>
+
+  <!-- Big reveal grid — all players at once -->
+  <div style="padding:20px;max-width:1400px;margin:0 auto">
+
+    <!-- Instruction banner -->
+    <div id="res-banner" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div style="font-size:0.88rem;color:var(--muted)">
+        🎯 <strong style="color:var(--text)">Rate every player's ranking</strong> using the slider — you can't score yourself
+      </div>
+      <div id="res-score-status" style="font-size:0.82rem;color:var(--muted)">0 / 0 scored</div>
+    </div>
+
+    <!-- Cards grid -->
+    <div id="res-grid" class="results-grid"></div>
+
+    <!-- Lock in scores button -->
+    <div style="text-align:center;margin-top:28px;padding-bottom:40px">
+      <button class="btn btn-gold" style="font-size:1rem;padding:16px 48px" onclick="lockScores()" id="lock-btn">
+        🔒 Lock In My Scores
+      </button>
+      <div id="lock-waiting" style="display:none;margin-top:12px">
+        <div class="tag tag-green" style="font-size:0.82rem;padding:8px 16px">✓ Scores locked — waiting for others…</div>
+        <div id="lock-chips" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="screen-leaderboard" class="screen">
+  <div style="text-align:center;margin-bottom:8px"><div class="logo-sub">Game Over</div></div>
+  <div class="lb-title">Final Scores</div>
+  <div style="text-align:center;margin:8px 0"><span class="tag tag-red" id="lb-info"></span></div>
+  <div class="lb-list" id="lb-list"></div>
+  <div style="text-align:center;margin-top:32px">
+    <button class="btn btn-gold" onclick="playAgain()">🔄 Play Again</button>
+    <button class="btn btn-ghost" onclick="goHome()" style="margin-left:10px">🏠 Home</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-create"><div class="modal">
+  <div class="modal-title">Create Room</div>
+  <div class="form-group"><label class="form-label">Your Name</label><input class="input-field" id="cr-name" placeholder="e.g. Maran" maxlength="20"></div>
+  <div style="display:flex;gap:10px;margin-top:24px"><button class="btn btn-primary" style="flex:1" onclick="createRoom()">Create</button><button class="btn btn-ghost" onclick="closeModal('create')">Cancel</button></div>
+</div></div>
+<div class="modal-overlay" id="modal-join"><div class="modal">
+  <div class="modal-title">Join Room</div>
+  <div class="form-group"><label class="form-label">Your Name</label><input class="input-field" id="jo-name" placeholder="e.g. Priya" maxlength="20"></div>
+  <div class="form-group"><label class="form-label">Room Code</label><input class="input-field" id="jo-code" placeholder="4-letter code" maxlength="6" style="text-transform:uppercase;letter-spacing:0.15em;font-family:'Bebas Neue',sans-serif;font-size:1.3rem"></div>
+  <div style="display:flex;gap:10px;margin-top:24px"><button class="btn btn-primary" style="flex:1" onclick="joinRoom()">Join</button><button class="btn btn-ghost" onclick="closeModal('join')">Cancel</button></div>
+</div></div>
+
+<script>
+// ======================================================
+// LANDING PAGE — Star cards + film holes
+// ======================================================
+(function buildLanding(){
+  const stars = [
+    {name:"Rajinikanth", role:"Actor",     emoji:"🌟", color:"#f5c518"},
+    {name:"Kamal Haasan",role:"Actor",     emoji:"🎭", color:"#e8002d"},
+    {name:"A.R. Rahman", role:"Composer",  emoji:"🎵", color:"#22c55e"},
+    {name:"Vijay",       role:"Actor",     emoji:"🔥", color:"#f97316"},
+    {name:"Mani Ratnam", role:"Director",  emoji:"🎬", color:"#3b82f6"},
+    {name:"Nayanthara",  role:"Actress",   emoji:"💫", color:"#a855f7"},
+    {name:"Ilaiyaraaja", role:"Composer",  emoji:"🎼", color:"#f5c518"},
+    {name:"Ajith Kumar", role:"Actor",     emoji:"⚡", color:"#e8002d"},
+    {name:"Sai Pallavi", role:"Actress",   emoji:"🌸", color:"#ec4899"},
+    {name:"Dhanush",     role:"Actor",     emoji:"🎯", color:"#06b6d4"},
+  ];
+
+  const container = document.getElementById('star-cards-container');
+  stars.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'star-card';
+    card.style.setProperty('--r', `${(i % 2 === 0 ? -1 : 1) * (3 + (i % 5) * 2)}deg`);
+    card.innerHTML = `
+      <div class="star-card-face" style="background:${s.color}18;color:${s.color}">
+        ${s.emoji}
+      </div>
+      <div class="star-card-name">${s.name}</div>
+      <div class="star-card-role">${s.role}</div>
+    `;
+    container.appendChild(card);
+  });
+
+  // Film holes
+  const holes = document.getElementById('film-holes');
+  for(let i=0;i<20;i++){
+    const h = document.createElement('div'); h.className='film-hole'; holes.appendChild(h);
+  }
+})();
+
+
+const PERSON_WORKS = {}; // populated by PW below
+const PW = {
+  // ── ACTORS ──
+  "Rajinikanth":       {w:["Baashha","Padayappa","Muthu","Enthiran","Kabali","Jailer"],         f:"First South Indian actor to earn ₹100 Cr per film fee"},
+  "Kamal Haasan":      {w:["Nayakan","Thevar Magan","Indian","Dasavathaaram","Vikram","Papanasam"],f:"Only Indian actor to have received both Padma Bhushan and National Film Award multiple times"},
+  "Vijay":             {w:["Thuppakki","Mersal","Master","Bigil","Leo","Beast"],                  f:"GOAT (2024) recorded Tamil cinema's biggest single-day opening"},
+  "Ajith Kumar":       {w:["Billa","Mankatha","Vivegam","Valimai","Thunivu","Vidaa Muyarchi"],   f:"Licensed racing driver who competed in Formula 2 and Formula 3"},
+  "Vikram":            {w:["Sethu","Pithamagan","Anniyan","Raavanan","Vikram","Thangalaan"],     f:"Lost 30 kg and went completely unrecognized on set for Sethu (1999)"},
+  "Suriya":            {w:["Kaakha Kaakha","7aum Arivu","24","Soorarai Pottru","Jai Bhim"],     f:"Runs Agaram Foundation that funds 60,000+ underprivileged students annually"},
+  "Dhanush":           {w:["Aadukalam","Maryan","Vada Chennai","Asuran","Raayan"],              f:"Won National Award for Best Actor at age 28 for Aadukalam (2011)"},
+  "Karthi":            {w:["Paruthiveeran","Siruthai","Theeran Adhigaaram Ondru","Kaithi","PS1"],f:"Son of Sivakumar; younger brother of Suriya; won Best Actor for Paruthiveeran"},
+  "Sivakarthikeyan":   {w:["Remo","Velaikkaran","Doctor","Don","Maaveeran","SK24"],             f:"Started as a comedy anchor on Sun TV before turning into a lead actor"},
+  "Vijay Sethupathi":  {w:["Soodhu Kavvum","Naanum Rowdy Dhaan","Super Deluxe","96","Vikram"],  f:"Nicknamed 'Makkal Selvan' (People's Treasure) by director Seenu Ramasamy"},
+  "Arya":              {w:["Naan Kadavul","Madrasapattinam","Ko","Sarpatta Parambarai","Magamuni"],f:"Runs a youth football club and academy in Chennai"},
+  "Jayam Ravi":        {w:["Jayam","Perazhagan","Sillunu Oru Kaadhal","Bhoomi","Ponniyin Selvan 1&2"],f:"Son of director Mohan Raja; has played diverse roles from romance to period drama"},
+  "Vishal":            {w:["Sandakozhi","Thaamirabharani","Poojai","Thupparivaalan","Enemy"],   f:"Serves as President of Nadigar Sangam; known for self-producing many films"},
+  "Silambarasan":      {w:["Manmadhan","Vinnaithaandi Varuvaayaa","Eesan","Maanaadu","Vendhu Thanindhadha Kaadu"],f:"Lost 30+ kg for Vendhu Thanindhadha Kaadu; son of T. Rajendar"},
+  "Prashanth":         {w:["Jeans","Badri","Vallavan","Thirumalai","Ivanukku Sathyam Illai"],   f:"Son of veteran actor Thiagarajan; was one of the top heroes of the late 90s"},
+  "Sarath Kumar":      {w:["Kaadhal Mannan","Tamizhan","Dheena","Komban","Siruthai"],          f:"Former President of South Indian Artistes' Association; also a politician"},
+  "Prabhu":            {w:["Agni Natchathiram","Thalapathi","Duet","Pavithra","Dharma Durai"],  f:"Son of legendary Tamil actor Sivaji Ganesan"},
+  "Arun Vijay":        {w:["Thadam","Yaanai","Mafia","Boxer","Kanguva"],                        f:"Son of actor Vijayakanth; known for intense action roles"},
+  "Atharvaa":          {w:["Baana Kaathadi","Paradesi","Muppozhudhum Un Karpanaigal","Boomerang"],f:"Son of late actor Murali; won Filmfare Best Tamil Actor for Paradesi (2013)"},
+  "Harish Kalyan":     {w:["Kaadhal Kan Kattudhe","Oh Manapenne","Ispade Rajavum Idhaya Raniyum","Varisu"],f:"Started career as a VJ on Sun Music before turning actor"},
+  "Raghava Lawrence":  {w:["Kanchana","Kanchana 2","Kanchana 3","Rudhran","Motta Siva Ketta Siva"],f:"Runs Raghava Lawrence Foundation for differently-abled children"},
+  "Bobby Simha":       {w:["Soodhu Kavvum","Jigarthanda","Rekka","Nenjam Marappathillai"],     f:"Won National Award for Best Supporting Actor for Jigarthanda (2014)"},
+  "Yogi Babu":         {w:["Namma Veettu Pillai","Comali","Soorarai Pottru","Demonte Colony 2","Garudan"],f:"Appeared in 50+ films in just 4 years — one of Tamil cinema's busiest comedians"},
+  "Soori":             {w:["Velaiyilla Pattathari","Rajinimurugan","Thaanaa Serndha Koottam","Viswasam","Pattas"],f:"Transitioned from comedian to full-fledged lead actor"},
+  "Sathyaraj":         {w:["Baashha","Kanchana","Baahubali","Naayagi","Soorarai Pottru"],      f:"Immortalized as Kattappa in the Baahubali franchise; iconic villain of the 80s"},
+  "Nassar":            {w:["Nayakan","Dasavathaaram","Kaatru Veliyidai","Ponniyin Selvan","Vikram"],f:"Veteran actor with 200+ films across Tamil, Telugu and Malayalam"},
+  "Prabhudeva":        {w:["Kadhalan","Minsara Kanavu","Abiyum Naanum","Gulebagavali","Devi"],  f:"Called the 'Michael Jackson of India' for his dance skills by international media"},
+  "Vijayakanth":       {w:["Chinna Gounder","Rajadhi Raja","Captain Prabhakaran","Senthilnathan","Uzhavan"],f:"Known as 'Captain'; founded DMDK political party; acted in 150+ films"},
+  "Mohan":             {w:["Mouna Ragam","Keladi Kanmani","Vetri","Thaai Mookambigai","Idhaya Kovil"],f:"1980s romantic hero known for gentle, emotional portrayals opposite Revathi and Sridevi"},
+  "Napoleon":          {w:["Naerukku Naer","Ullaasam","Vijaypath","Mudhalvan","En Swasa Kaatre"],f:"Known for villain and character roles opposite top 90s heroes"},
+  "Samuthirakani":     {w:["Aadukalam","Naanum Rowdy Dhaan","Soorarai Pottru","Viduthalai","Irudhi Suttru"],f:"Also a director; known for socially relevant films and powerful supporting roles"},
+  "Kishore":           {w:["Ratsasan","Aadukalam","Vada Chennai","Irudhi Suttru","Kadal"],     f:"Theatre-trained actor famous for intense, method-based performances"},
+  "Vijay Antony":      {w:["Naan","Inaaya","Bichagadu","Kolaigaran","Ratham"],                  f:"Music composer-turned-actor; composed for over 100 films before acting"},
+  "Siddharth":         {w:["Boys","Rang De Basanti","Jaane Tu Ya Jaane Na","Inaindha Kaigal (2012)","Oh Kadhal Kanmani"],f:"Made Tamil debut with AR Rahman's Boys; theatre-trained stage actor"},
+  "Aravind Swamy":     {w:["Roja","Bombay","Alaipayuthey","Thani Oruvan","Dear Comrade"],      f:"Took a 15-year hiatus from films; made a successful comeback in 2015"},
+  // ── ACTORS (secondary) ──
+  "Jai":               {w:["Ko","Inaindha Kaigal (2012)","Boomerang","Comali","Iruttu Araiyil Murattu Kuththu"],f:"Energetic actor known for youth films; appeared in 30+ Tamil productions"},
+  "Bharath":           {w:["7G Rainbow Colony","Inaindha Kaigal (2012)","Veyil","Seval","Naan Mahaan Alla"],f:"Best known for 7G Rainbow Colony; trained under director Selvaraghavan"},
+  "Karthik Sivakumar": {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Sagaptham","Naan Avanillai 2"],f:"Son of veteran actor Sivakumar; brother of Suriya and Karthi"},
+  "Mime Gopi":         {w:["Aaranya Kaandam","Vada Chennai","Karnan","Super Deluxe","Jagame Thandhiram"],f:"Trained mime artist; known for wordless, intense character portrayals"},
+  "Munishkanth":       {w:["Theeran Adhigaaram Ondru","Inaindha Kaigal (2012)","Comali","Doctor","Don"],f:"Known for his hulking physique; popular in supporting and comedy roles"},
+  "Bose Venkat":       {w:["Soodhu Kavvum","Inaindha Kaigal (2012)","Jigarthanda","Kaithi","Vikram"],f:"Reliable character actor known for playing memorable villain roles"},
+  "Daniel Annie Pope":  {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Doctor","Don","Inaindha Kaigal (2012)"],f:"Comedy actor known for expressive face and energetic screen presence"},
+  "Karunakaran":       {w:["Master","Maanagaram","Inaindha Kaigal (2012)","Namma Veettu Pillai"],f:"One of the most recognisable comedy faces in modern Tamil cinema"},
+  "Pugazh":            {w:["Cooku with Comali (TV)","Oh Manapenne","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Rose to fame through Cooku with Comali on Vijay TV; natural comic flair"},
+  "Karthik Kumar":{"w":["Yaaradi Nee Mohini","Veppam","Vanakkam Chennai"],"f":"One of the pioneers of English stand-up comedy in India"},
+  "Charle":{"w":["Kadhalukku Mariyadhai","Amarkalam","Friends","Veera"],"f":"Veteran actor with 800+ films across multiple languages"},
+  "Ma Ka Pa Anand":    {w:["Cooku with Comali (TV)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Popular anchor and actor; became a household name through Sun TV and Vijay TV shows"},
+  "Ramesh Thilak":     {w:["Inaindha Kaigal (2012)","Cooku with Comali (TV)","Inaindha Kaigal (2012)"],f:"Known for comedy roles; popular through Cooku with Comali reality show"},
+  "Radharavi":         {w:["Baashha","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Veteran character actor who has played both villains and comedy roles across 300+ films"},
+  "K.S.Ravikumar":     {w:["Muthu","Dasavathaaram","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Prolific director who has worked with Rajinikanth, Kamal, Vijay, Ajith and more"},
+  "Anandaraj":         {w:["Baashha","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Reliable Tamil character actor who excels as villain and comedian across 300+ films"},
+  "Delhi Ganesh":{"w":["Nayakan","Michael Madana Kama Rajan","Thenali","Avvai Shanmugi"],"f":"Former Indian Air Force personnel turned actor"},
+  "Nandha":{"w":["Nandha","Pithamagan","Eeram","Anjathe"],"f":"Known for intense supporting roles in Bala's films"},
+  "Srikanth":{"w":["Roja Kootam","April Maadhathil","Kana Kanden","Nanban"],"f":"Rose to fame with romantic hits in early 2000s"},
+  "Vikram Prabhu":{"w":["Kumki","Ivan Veramathiri","Arima Nambi","Taanakkaran"],"f":"Grandson of Sivaji Ganesan"},
+  "Vineeth":{"w":["Kadhal Desam","Minsara Kanavu","Gentleman"],"f":"Classical dancer trained in Bharatanatyam"},
+  "Thiagarajan":{"w":["Malaiyoor Mambattiyan","Paayum Puli"],"f":"Actor-director; father of Prashanth"},
+  "Vikraman":{"w":["Poove Unakkaga","Suryavamsam","Unnidathil Ennai Koduthen"],"f":"Specialist in feel-good family dramas"},
+  "Saran":{"w":["Amarkalam","Vasool Raja MBBS","Attagasam"],"f":"Directed Ajith's Amarkalam which became a cult hit"},
+  "Karthik":           {w:["Idhaya Kovil","Mouna Ragam","Agni Natchathiram","Kadhalukku Mariyadhai"],f:"Popular 80s-90s romantic hero; son of veteran comedian Muthuraman"},
+  "Rio Raj":           {w:["Cook with Comali (TV)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Made famous by Cook with Comali on Vijay TV; now a regular film actor"},
+  "Ashok Selvan":      {w:["Oh My Kadavule","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Young Tamil actor known for strong performances in indie films"},
+  "Arulnithi":{"w":["Vamsam","Demonte Colony","Iravukku Aayiram Kangal"],"f":"Known for choosing experimental thriller scripts"},
+  "Jiiva":             {w:["Katrathu Tamizh","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Son of director Raghuvaran; appeared in critically praised Katrathu Tamizh"},
+  "G.V. Prakash Kumar":{w:["Aayirathil Oruvan","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Nephew of A.R. Rahman; music composer who also acts in lead roles"},
+  "Ramarajan":{"w":["Karagattakaran","Enga Ooru Pattukaran"],"f":"One of the biggest rural stars of 80s Tamil cinema"},
+  "Abbas":{"w":["Kadhal Desam","Jeans","Minnale","Padayappa"],"f":"Known for stylish urban roles in 90s films"},
+  "Vikranth":{"w":["Karka Kasadara","Muthukku Muthaaga","Bakrid"],"f":"Cousin of actor Vijay"},
+  "Prem Kumar":{"w":["96"],"f":"Director of the critically acclaimed film 96"},
+  "Narain":{"w":["Kaithi","Anjathe","Mugamoodi"],"f":"Known for intense police roles"},
+  "Cheran":            {w:["Autograph","Vetri Kodi Kattu","Bharathi Kannamma","Mozhi"],         f:"Actor-director known for deeply emotional family dramas; National Award winner"},
+  "Sharath Babu":{"w":["Muthu","Annamalai","Nippulanti Manishi"],"f":"Known for dignified supporting roles across South cinema"},
+  "Nagesh":            {w:["Server Sundaram","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Pioneer of Tamil screen comedy; appeared in 1000+ films across 5 decades"},
+  "M.R.Radha":{"w":["Ratha Kanneer","Bale Pandiya"],"f":"Legendary Tamil villain and stage actor"},
+  "Pandiarajan":       {w:["Michael Madana Kama Rajan","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Actor-director known for rustic comedy and rural Tamil stories"},
+  "Murali":{"w":["Idhayam","Vetri Kodi Kattu","Sundara Travels"],"f":"Father of actor Atharvaa"},
+  "T.Rajendar":{"w":["Oru Thalai Ragam","Sonnal Thaan Kaadhala"],"f":"Multi-talented artist - actor, director, composer"},
+  "Thavakalai":{"w":["Kanchana","Muni","Aranmanai"],"f":"Known for his distinctive comic body language"},
+  "Karthikeya":{"w":["Valimai","RX100"],"f":"Gained Tamil recognition as villain in Valimai"},
+  "Bharathidasan":{"w":["Classic Tamil films"],"f":"Veteran theatre-based character artist"},
+  "Bhagyaraj":         {w:["Ninaithale Inikkum","Nool Veli","Vedikkai Mannan","Puthiya Vaarpugal"],f:"Prolific actor-director who wrote, directed and starred in hit films himself"},
+  "Arun Pandian":{"w":["Oomai Vizhigal","Devan"],"f":"Actor turned politician and businessman"},
+  "Mysskin":{"w":["Anjathe","Pisasu","Psycho","Thupparivaalan"],"f":"Known for unique filmmaking and acting style"},
+  "Rahman":{"w":["Pudhu Pudhu Arthangal","Sangamam","Dhuruvangal Pathinaaru"],"f":"National Award-winning supporting actor"},
+  "Sathish":{"w":["Ethir Neechal","Maan Karate","Bairavaa","Varisu"],"f":"Frequent comedian in Vijay films"},
+  "Dinesh":{"w":["Attakathi","Visaranai","Kabali"],"f":"Known for critically acclaimed performances"},
+  "Vidharth":{"w":["Mynaa","Kurangu Bommai","Kuttrame Thandanai"],"f":"Known for realistic rural roles"},
+  "Aari":{"w":["Nedunchaalai","Maya"],"f":"Winner of Bigg Boss Tamil Season 4"},
+  "Vimal":{"w":["Kalavani","Vaagai Sooda Vaa","Kalakalappu"],"f":"Started as assistant director under Shankar"},
+  "Lawrence":          {w:["Kanchana","Kanchana 2","Kanchana 3","Rudhran"],                     f:"Choreographer-turned-actor; same person as Raghava Lawrence"},
+  // ── ACTRESSES ──
+  "Nayanthara":        {w:["Ghajini","Chandramukhi","Naanum Rowdy Dhaan","Kolamavu Kokila","Bigil","O2"],f:"First South Indian actress to be both a solo producer and star simultaneously"},
+  "Jyothika":          {w:["Kaaka Kaaka","Sillunu Oru Kaadhal","Mozhi","36 Vayadhinile","Ponmagal Vandhal"],f:"Returned to films after a 7-year break; chose only women-centric stories"},
+  "Trisha Krishnan":   {w:["Ghajini","Saamy","Vinnaithaandi Varuvaayaa","96","Ponniyin Selvan"],f:"One of Tamil cinema's longest-serving leading ladies with 20+ years of stardom"},
+  "Samantha Ruth Prabhu":{w:["Kaththi","Mersal","Oh Baby","Yashoda","Kushi"],                  f:"Her item song 'Oo Antava' from Pushpa broke YouTube records in India"},
+  "Sai Pallavi":       {w:["Kali","Diya","Love Story","Virata Parvam","Amaran"],               f:"Trained MBBS doctor; her Rowdy Baby dance video has 1 billion+ YouTube views"},
+  "Keerthy Suresh":    {w:["Remo","Mahanati","Miss India","Saani Kaayidham","Dasara"],         f:"Won National Award for Best Actress for Mahanati (2018)"},
+  "Nithya Menen":      {w:["180","OK Kanmani","Merku Thodarchi Malai","Thiruchitrambalam","Merry Christmas"],f:"Classically trained singer who performs her own songs on screen"},
+  "Ramya Krishnan":    {w:["Padayappa","Chandramukhi","Baahubali","Iru Mugan","Aranmanai"],    f:"Her Neelambari in Padayappa is one of Tamil cinema's most iconic villain roles"},
+  "Roja":              {w:["Roja","Baashha","Muthu","Poovellam Un Vaasam","Inaindha Kaigal"],  f:"The original Mani Ratnam heroine; Roja won the National Award for Best Film"},
+  "Revathi":           {w:["Iruvar","Thaavamai Thaavamirundhu","Mouna Ragam","Thevar Magan"],  f:"National Award-winning actress and accomplished film director"},
+  "Meena":             {w:["Dasavathaaram","Padayappa","Roja","Michael Madana Kama Rajan"],    f:"Child actress who became one of Tamil cinema's top heroines of the 90s"},
+  "Sneha":             {w:["Autograph","Virumandi","Aayutha Ezhuthu","Aanandha Thandavam (2010)"],f:"Won National Award for Best Actress for Aanandha Thandavam"},
+  "Urvashi":           {w:["Michael Madana Kama Rajan","Apoorva Sagodharargal","Kadhal Mannan","Bharathi Kannamma"],f:"Known as 'Comedy Queen of Tamil cinema'; active for 4 decades"},
+  "Raadhika Sarathkumar":{w:["Iruvar","Mouna Ragam","Ninaithale Inikkum","Sindhu Bhairavi"],   f:"Pioneer actress-turned-producer; runs Radaan Mediaworks"},
+  "Khushbu Sundar":    {w:["Michael Madana Kama Rajan","Pavithra","Kadhal Mannan","Kalki"],   f:"Major 90s Tamil star; later became a politician and BJP spokesperson"},
+  "Suhasini Maniratnam":{w:["Nool Veli","Keladi Kanmani","Mani Ratnam productions"],          f:"Wife of director Mani Ratnam; also an accomplished director herself"},
+  "Shalini":           {w:["Kaadhal Desam","Uyire","Minsara Kanavu","Jeans"],                  f:"Married Ajith Kumar in 2000; one of the most loved heroines of the late 90s"},
+  "Saritha":{"w":["Agni Sakshi","Marupakkam","Vedham Pudhithu"],"f":"Multiple National Award-winning actress known for powerful performances"},
+  "Ambika":{"w":["Sakalakala Vallavan","Kaakki Sattai","Mr Bharath"],"f":"One of the most popular heroines of 80s Tamil cinema"},
+  "Tamannaah Bhatia":  {w:["Baahubali","Mappillai","Devi","Kaththi Sandai"],                  f:"One of the highest-paid South Indian actresses; appeared in Tamil, Telugu and Hindi films"},
+  "Hansika Motwani":   {w:["Desamuduru","Kanthaswamy","Mappillai","Engeyum Kadhal"],           f:"Debuted as a child artiste in Bollywood's Koi Mil Gaya opposite Hrithik Roshan"},
+  "Andrea Jeremiah":   {w:["Vinnaithaandi Varuvaayaa","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Singer-actress; sang her own songs in VTV; known for a distinct screen presence"},
+  "Amala Paul":{"w":["Mynaa","Velaiyilla Pattathari","Aadai","Thiruttu Payale 2"],"f":"Known for choosing bold and unconventional roles"},
+  "Varalaxmi Sarathkumar":{w:["Saahasam","Jackson Durai","Ratsasan","Inaindha Kaigal (2012)"],f:"Daughter of actor Sarath Kumar; known for intense character roles"},
+  "Priya Anand":{"w":["Ethir Neechal","Vanakkam Chennai","LKG"],"f":"Known for lively and expressive performances"},
+  "Shruti Haasan":     {w:["3","Yennai Arindhaal","Luck","Premam Tamil"],                     f:"Daughter of Kamal Haasan; also a professional rock singer"},
+  "Laila":             {w:["Natpukkaga","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],   f:"90s Tamil actress known for Natpukkaga and several mass entertainers"},
+  "Padmapriya":{"w":["Thavamai Thavamirundhu","Pattiyal"],"f":"Critically acclaimed actress known for realistic roles"},
+  "Kamalinee Mukherjee":{"w":["Vettaiyaadu Vilaiyaadu"],"f":"Known for strong performances in Tamil and Telugu cinema"},
+  "Parvathy Thiruvothu":{"w":["Mariyaan","Bangalore Days"],"f":"National Award-winning actress known for bold roles"},
+  "Riythvika":         {w:["Naachiyaar","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],   f:"Won National Award for Best Supporting Actress for Naachiyaar (2018)"},
+  "Anushka Shetty":    {w:["Baahubali","Rudhramadevi","Size Zero","Bhaagamathie"],             f:"One of the biggest South Indian stars; iconic as Devasena in Baahubali franchise"},
+  "Rashmika Mandanna": {w:["Pushpa","Pushpa 2","Animal","Inaindha Kaigal (2012)"],            f:"Known as 'National Crush of India'; rose to pan-India fame with Pushpa"},
+  "Rakul Preet Singh":{"w":["Theeran Adhigaaram Ondru","NGK"],"f":"Leading actress across Tamil, Telugu and Hindi industries"},
+  "Nagma":{"w":["Baashha","Kadhalan"],"f":"One of the biggest 90s Tamil heroines"},
+  "Mamta Mohandas":{"w":["Guru En Aalu"],"f":"Actress and playback singer across South industries"},
+  "Malavika Mohanan":{"w":["Master","Christy"],"f":"Daughter of cinematographer K.U. Mohanan"},
+  "Oviya":{"w":["Kalavani","Marina"],"f":"Became a cult sensation after Bigg Boss Tamil"},
+  "Prayaga Martin":{"w":["Pisaasu"],"f":"Known for Malayalam and Tamil crossover roles"},
+  "Madonna Sebastian":{"w":["Premam","Kadhalum Kadandhu Pogum"],"f":"Singer-actress known for natural performances"},
+  "Anjali":{"w":["Angadi Theru","Engaeyum Eppothum"],"f":"Critically acclaimed for realistic acting"},
+  "Aishwarya Rajesh":{"w":["Kaaka Muttai","Kanaa","Vada Chennai"],"f":"Known for strong female-centric roles"},
+  "Asin":              {w:["Ghajini","Dasavathaaram","Pokkiri","Sivakasi"],                    f:"Starred in the original Tamil Ghajini opposite Suriya; later moved to Bollywood"},
+  "Bhavana":{"w":["Chithiram Pesuthadi","Deepavali"],"f":"Popular Malayalam actress who acted in Tamil hits"},
+  "Sunainaa":{"w":["Kadhalil Vizhunthen","Neerparavai"],"f":"Known for expressive performances"},
+  "Vani Bhojan":{"w":["Oh My Kadavule"],"f":"Rose from TV serials to films"},
+  "Megha Akash":{"w":["Enai Noki Paayum Thota"],"f":"Known for girl-next-door roles"},
+  "Aathmika":{"w":["Meesaya Murukku"],"f":"Gained popularity through debut film"},
+  "Indhuja Ravichandran":{"w":["Meyaadha Maan","Bigil"],"f":"Known for strong supporting roles"},
+  "Devayani":{"w":["Kadhal Kottai","Suryavamsam"],"f":"Top family-drama heroine of 90s Tamil cinema"},
+  "Sangitha":{"w":["Pithamagan","Uyir"],"f":"Known for intense character roles"},
+  "Saroja Devi":{"w":["Enga Veettu Pillai","Anbe Vaa"],"f":"Legendary actress of Tamil golden era"},
+  "Suganya":{"w":["Chinna Gounder","Gentleman"],"f":"Known for traditional roles"},
+  "Seetha":{"w":["Aan Paavam","Unnal Mudiyum Thambi"],"f":"Popular 80s heroine"},
+  "Kanaka":{"w":["Karagattakaran"],"f":"Daughter of actress Devika"},
+  "Nalini":{"w":["Oru Malarin Payanam"],"f":"Veteran actress with long TV career"},
+  "Sanusha":{"w":["Renigunta"],"f":"Child artist turned actress"},
+  "Dhansika":          {w:["Mynaa","Petta","Inaindha Kaigal (2012)"],                          f:"Won National Award for Best Supporting Actress for Mynaa (2010)"},
+  "Archana Kavi":{"w":["Aravaan"],"f":"Known for Malayalam and Tamil roles"},
+  "Gayathrie Shankar": {w:["Kannum Kannum Kollaiyadithaal","Oh Manapenne","Inaindha Kaigal (2012)"],f:"Known for nuanced, realistic performances in Tamil independent films"},
+  "Anu Emmanuel":{"w":["Thupparivaalan"],"f":"Actress in Tamil and Telugu films"},
+  "Saranya Ponvannan":{"w":["Thenmerku Paruvakaatru","Velaiyilla Pattathari"],"f":"National Award-winning supporting actress"},
+  "Rohini":{"w":["Magalir Mattum","Virumandi"],"f":"Actress, writer and dubbing artist"},
+  "Saranya":{"w":["Nayakan"],"f":"Known for strong character roles"},
+  "Devadarshini":{"w":["96","Bigil"],"f":"Known for comedy-support roles"},
+  "Bhanupriya":{"w":["Sathriyan","Annamalai"],"f":"Classical dancer and actress"},
+  "Vijayalakshmi":{"w":["Chennai 600028"],"f":"Known for modern Tamil roles"},
+  "Shanthipriya":{"w":["Enga Ooru Pattukaran"],"f":"Actress from 80s Tamil cinema"},
+  "Lakshmi":{"w":["Sila Nerangalil Sila Manithargal"],"f":"National Award-winning actress"},
+  "Vimala Raman":{"w":["Poi"],"f":"Australian-Indian actress"},
+  "Catherine Tresa":{"w":["Madras","Kanithan"],"f":"Known for glamorous roles"},
+  "Amy Jackson":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","I"],            f:"British actress who made her Tamil debut in Shankar's I (2015) opposite Vikram"},
+  "Kaniha":{"w":["Autograph"],"f":"Actress and dubbing artist"},
+  "Swathi Reddy":{"w":["Subramaniapuram"],"f":"Known for realistic acting"},
+  "Manisha Yadav":{"w":["Vazhakku Enn 18/9"],"f":"Critically acclaimed debut"},
+  "Kasthuri":{"w":["Indian"],"f":"Veteran actress and TV personality"},
+  "Hemalatha":         {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Veteran Tamil actress known for significant roles in 80s drama films"},
+  "Geetha":{"w":["Pudhupudhu Arthangal"],"f":"Popular 80s actress"},
+  "Tanya Hope":{"w":["Thadam"],"f":"Model turned actress"},
+  "Manasa Radhakrishnan":{w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],             f:"Tamil actress known for her work in mainstream Tamil productions"},
+  "Yaashika Aanand":{"w":["Iruttu Araiyil Murattu Kuththu"],"f":"Bigg Boss Tamil fame"},
+  "Mia George":{"w":["Amara Kaaviyam"],"f":"Malayalam-Tamil actress"},
+  "Sanchita Shetty":{"w":["Soodhu Kavvum"],"f":"Known for quirky roles"},
+  "Preethi Asrani":    {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],               f:"Tamil actress known for her work in mainstream Tamil productions"},
+  "Latha":             {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],               f:"Popular Tamil actress of the 70s-80s; known for strong female-centric roles"},
+  "Gouthami":{"w":["Thevar Magan","Nammavar"],"f":"Frequent collaborator of Kamal Haasan"},
+  "Mumtaz":{"w":["Kushi"],"f":"Known for item songs and glam roles"},
+  "Shobana":{"w":["Manichitrathazhu","Thalapathi"],"f":"National Award-winning actress and dancer"},
+  "Simran":{"w":["Vaali","Kannathil Muthamittal","Panchatanthiram"],"f":"One of the biggest stars of late 90s Tamil cinema"},
+  "Sanghavi":{"w":["Amarkalam"],"f":"Popular 90s heroine"},
+  "Nakshathra":        {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],               f:"Tamil actress who appeared in several mainstream Tamil productions"},
+  "Mythili":           {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],               f:"Tamil actress known for light-hearted commercial films"},
+  "Ashwini":           {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],               f:"Tamil actress known for her work in Tamil films during the 2000s"},
+  "Swasika":{"w":["Lubber Pandhu"],"f":"Known for Malayalam-Tamil crossover roles"},
+  "Niveditha":         {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],               f:"Tamil actress known for her work in Tamil serials and commercial films"},
+  "Vidya Pradeep":{"w":["Pasanga 2"],"f":"Actress and scientist"},
+  "Pooja Hegde":{"w":["Beast"],"f":"Pan-India actress and former beauty pageant winner"},
+  "Bindhu Madhavi":{"w":["Kazhugu"],"f":"Known for strong supporting roles"},
+  "Lakshmi Gopalaswamy":{"w":["Sye"],"f":"Classical dancer and actress"},
+  "Parvathi Menon":    {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],               f:"National Award-winning actress known for versatile cross-industry roles"},
+  "Nadia":{"w":["Minsara Kanavu"],"f":"Made successful comeback in character roles"},
+  "Vidhya":            {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],               f:"Tamil actress known for her roles in family and romantic dramas"},
+  "Sridevi":           {w:["Moondram Pirai","Sigappu Rojakkal","16 Vayathinile","Inaindha Kaigal (2012)"],f:"Legendary actress who dominated both Tamil and Bollywood for decades"},
+  "Shakila":{"w":["Various Tamil films"],"f":"Known for cult following in 90s cinema"},
+  // ── DIRECTORS ──
+  "Mani Ratnam":       {w:["Roja","Bombay","Alaipayuthey","Kannathil Muthamittal","Ponniyin Selvan 1&2"],f:"First Tamil director to consistently attract pan-India and global audiences"},
+  "K. Balachander":    {w:["Ninaithale Inikkum","Aval Appadithan","47 Natkal","Apoorva Raagangal"],f:"Launched Rajinikanth, Kamal Haasan and Sridevi in Tamil cinema"},
+  "Bharathiraja":      {w:["16 Vayathinile","Muthal Mariyathai","Kizhakku Cheemayile","Thalapathi"],f:"Known as 'Mann Vasanai' director; popularised rural Tamil cinema"},
+  "Selvaraghavan":     {w:["Kadhal Kondein","7G Rainbow Colony","Pudhupettai","Aayirathil Oruvan"],f:"Dhanush's brother; revolutionised Tamil youth cinema in the 2000s"},
+  "Shankar":           {w:["Gentleman","Indian","Enthiran","2.0","Indian 2"],               f:"Tamil cinema's biggest-budget director; Enthiran (2010) cost ₹160 Cr"},
+  "A.R. Murugadoss":   {w:["Ghajini","Thuppakki","Kaththi","Sarkar","Bigil"],              f:"His Ghajini remake introduced the iconic shaved-head revenge look to Tamil cinema"},
+  "Gautham Menon":     {w:["Kaakha Kaakha","Vinnaithaandi Varuvaayaa","Yennai Arindhaal","Vaaranam Aayiram"],f:"Known for urban romances and intense BGMs; close collaborator of A.R. Rahman"},
+  "Pa. Ranjith":       {w:["Madras","Kabali","Kaala","Sarpatta Parambarai","Natchathiram Nagargiradhu"],f:"Most prominent Dalit filmmaker in Tamil cinema"},
+  "Vetrimaaran":       {w:["Polladhavan","Aadukalam","Visaranai","Vada Chennai","Viduthalai"],f:"Known for uncompromising realistic filmmaking; back-to-back National Awards"},
+  "Lokesh Kanagaraj":  {w:["Maanagaram","Kaithi","Master","Vikram","Leo"],                 f:"Creator of the interconnected 'Lokesh Cinematic Universe' (LCU)"},
+  "Nelson Dilipkumar": {w:["Kolamaavu Kokila","Doctor","Beast"],                           f:"Known for dark comedy-thrillers; Doctor was a massive pandemic-era hit"},
+  "Atlee Kumar":       {w:["Raja Rani","Theri","Mersal","Bigil","Jawan"],                  f:"Protégé of Shankar; directed both Vijay and Shah Rukh Khan to blockbusters"},
+  "Karthik Subbaraj":  {w:["Pizza","Jigarthanda","Iraivi","Petta","Mahaan"],               f:"Indie filmmaker loved for genre-bending narratives and pop-culture references"},
+  "Suresh Krishna":    {w:["Baashha","Muthu","Padayappa","Baba","Perazhagan"],             f:"Directed all of Rajinikanth's biggest 90s blockbusters"},
+  "Lingusamy":         {w:["Sandakozhi","Run","Paiyaa","Thadaiyara Thadai"],               f:"Known for high-octane action films; Sandakozhi launched Vishal's career"},
+  "K.V. Anand":        {w:["Ayan","Ko","Maattrraan","24","Kaappaan"],                      f:"Also a celebrated cinematographer before turning director"},
+  "Radha Mohan":       {w:["Mozhi","Abhiyum Naanum","Neram Nalla Neram"],                  f:"Known for subtle, heartwarming films with strong female characters"},
+  "Venkat Prabhu":     {w:["Chennai 600028","Goa","Mankatha","Party","GOAT"],              f:"Made the cult Chennai 600028 which revived Tamil friendship films"},
+  "Sudha Kongara":     {w:["Irudhi Suttru","Soorarai Pottru"],                             f:"First female director to win National Award for a Tamil film (Soorarai Pottru)"},
+  "Mari Selvaraj":     {w:["Pariyerum Perumal","Karnan","Maamannan"],                      f:"Former Pa. Ranjith associate; makes politically powerful films"},
+  "Balu Mahendra":     {w:["Ninaithale Inikkum","Moondram Pirai","Nool Veli"],             f:"Legendary cinematographer-director; pioneered realistic lighting in Tamil cinema"},
+  "Halitha Shameem":   {w:["Poomagal Oorvalam","Sillu Karupatti","Minmini"],               f:"Female director known for sensitive, authentic slice-of-life stories"},
+  "S.J. Suryah":       {w:["Dum Dum Dum","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Actor-director who introduced unique visual styles in early 2000s Tamil cinema"},
+  "Vijay Milton":      {w:["Goli Soda","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Cinematographer-turned-director; known for realistic low-budget Tamil films"},
+  "Seenu Ramasamy":    {w:["Thenmerku Paruvakaatru","Dharma Durai","Inaindha Kaigal (2012)"],f:"Won National Award for Thenmerku Paruvakaatru; authentic storyteller of Madurai life"},
+  "Raju Murugan":      {w:["Joker","Cuckoo","Inaindha Kaigal (2012)"],                     f:"Joker is one of Tamil cinema's boldest political satires"},
+  "S.A. Chandrasekhar":{w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Prolific Tamil director; father of Thalapathy Vijay"},
+  "T. Rajendran":      {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Veteran Tamil director known for directing hundreds of popular rural entertainers"},
+  "Sundar C":          {w:["Aadhavan","Aranmanai","Inaindha Kaigal (2012)"],               f:"Most prolific comedy-horror director in Tamil cinema"},
+  "Prabhu Solomon":    {w:["Mynaa","Kumki","Kaappaan","Inaindha Kaigal (2012)"],           f:"Known for nature and wildlife themes; Kumki became a massive blockbuster"},
+  "Hari":              {w:["Singam","Singam 2","Singam 3","Saamy","Saamy 2"],              f:"Directed the entire Singam franchise with Suriya; king of mass commercial cinema"},
+  "Magizh Thirumeni":  {w:["Thadam","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],   f:"Known for realistic thrillers; Thadam was a critically acclaimed debut"},
+  "Gokul":{"w":["Idharkuthane Aasaipattai Balakumara","Kaashmora"],"f":"Known for quirky comedy entertainers"},
+  "Parthiban Kandasamy":{"w":["Pudhiya Paadhai","Housefull","Oththa Seruppu Size 7"],"f":"Known for experimental filmmaking and single-actor films"},
+  "Agathiyan":         {w:["Jodi","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],      f:"Known for romantic dramas; directed Jodi with Prashanth and Simran"},
+  "Muthaiah":          {w:["Kombu Vacha Singamda","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Known for rural action entertainers set in South Tamil Nadu"},
+  "Thiru":{"w":["Theeradha Vilaiyattu Pillai","Naan Sigappu Manithan"],"f":"Known for stylish commercial entertainers"},
+  "Ramkumar":{"w":["Ratsasan","Mundasupatti"],"f":"Known for gripping thriller storytelling"},
+  "K. Bhagyaraj":      {w:["Ninaithale Inikkum","Nool Veli","Inaindha Kaigal (2012)"],     f:"Legendary actor-director who wrote, directed and starred in his own hit films"},
+  "Nalan Kumarasamy":  {w:["Soodhu Kavvum","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Wrote and directed the acclaimed dark comedy Soodhu Kavvum"},
+  "Kiruthiga Udhayanidhi":{"w":["Vanakkam Chennai","Kaali"],"f":"Focuses on urban relationship dramas"},
+  "Arivazhagan":       {w:["Eeram","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],     f:"Known for supernatural and sci-fi Tamil films; Eeram was a cult thriller"},
+  "R. Kannan":{"w":["Jayam Kondaan","Settai","Boomerang"],"f":"Known for light-hearted commercial entertainers"},
+  "N. Rajasekar":{"w":["Mapla Singam"],"f":"Director of rural mass entertainers"},
+  "M. Rajesh":{"w":["Siva Manasula Sakthi","Boss Engira Bhaskaran","OK OK"],"f":"Specialist in comedy entertainers"},
+  "Pandiraj":          {w:["Pasanga","Kadaikutty Singam","Inaindha Kaigal (2012)"],        f:"Known for emotional family dramas; Pasanga won critical acclaim"},
+  "Ezhil":{"w":["Thulladha Manamum Thullum","Velainu Vandhutta Vellaikaaran"],"f":"Known for family and comedy dramas"},
+  "Aswin Saravanan":{"w":["Maya","Game Over"],"f":"Known for psychological horror thrillers"},
+  "Arun Raja Kamaraj": {w:["Kannum Kannum Kollaiyadithaal","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Director of the acclaimed KKK; lyricist and director known for stylish films"},
+  "S. Prem Anand":{"w":["DD Returns"],"f":"Emerging director in comedy-horror genre"},
+  "Rajesh M. Selva":{"w":["Thoongaavanam","Kadaram Kondan"],"f":"Frequent collaborator of Kamal Haasan"},
+  "Rajiv Menon":       {w:["Minsara Kanavu","Kandukondain Kandukondain"],                   f:"Renowned cinematographer who shot Mani Ratnam classics before directing"},
+  "Bhaskar":{"w":["Veppam","To Let"],"f":"Known for realistic storytelling contributions"},
+  "Suseenthiran":      {w:["Nanbenda","Vanjagar Ulagam","Inaindha Kaigal (2012)"],         f:"Won National Award for Best Direction for Naan Yaar"},
+  "M. Sasikumar":      {w:["Subramaniapuram","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Subramaniapuram was a cult hit made on an extremely low budget"},
+  "Perarasu":{"w":["Thirupaachi","Sivakasi","Dharmapuri"],"f":"Known for mass commercial entertainers with Vijay"},
+  "Arunraja Kamaraj":  {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Lyricist-director known for emotional storytelling"},
+  "Karthik G. Krish":{"w":["Yaan"],"f":"Directed urban action thrillers"},
+  "Gowtham Sundarrajan":{"w":["Character actor with limited directing credits"],"f":"Character actor occasionally associated with filmmaking"},
+  "Priyadarshan":      {w:["Kancheepuram","Chandrakanta","Kilukkam"],                      f:"Prolific Malayalam director who made numerous Tamil blockbusters too"},
+  "P. Padmarajan":{"w":["Thoovanathumbikal"],"f":"Legendary writer-director who deeply influenced South cinema narratives"},
+  "Sakthi Rajasekaran":{"w":["Ninaithale Inikkum (2009)"],"f":"Known for youth-oriented films"},
+  "M.S. Rajendar":{"w":["Various TV and film projects"],"f":"Actor-director known for multi-disciplinary work"},
+  "R.K. Selvamani":{"w":["Pulan Visaranai","Captain Prabhakaran"],"f":"Known for investigative and political thrillers"},
+  "K.S. Adhiyaman":{"w":["Thoondil"],"f":"Known for socially themed dramas"},
+  "A.C. Tirulokchandar":{"w":["Deivamagal","Anbe Vaa"],"f":"Veteran director of classic Tamil cinema"},
+  "A.P. Nagarajan":{"w":["Thiruvilaiyadal","Saraswathi Sabatham"],"f":"Specialist in mythological and devotional films"},
+  "K. Viswanath":{"w":["Sankarabharanam","Sagara Sangamam"],"f":"Legendary director known for classical art-based films"},
+  "Don Sandy":         {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Upcoming Tamil director known for youth-centric entertaining films"},
+  "Caarthick Raju":{"w":["Thirudan Police"],"f":"Known for comedy-action entertainers"},
+  // ── COMEDIANS ──
+  "Vadivelu":          {w:["Friends","Thalai Nagaram","Kaadhala Kaadhala","Appu","Run"],    f:"Considered the greatest Tamil comedian of all time; his dialogues are quoted daily"},
+  "Vivekh":            {w:["Saamy","Ayya","Perazhagan","Run","Priyamanavale"],              f:"Social activist comedian who planted crores of trees across Tamil Nadu"},
+  "Santhanam":         {w:["Boss Engira Bhaskaran","Maan Karate","Bogan","Dikkiloona"],     f:"One of Tamil cinema's highest-paid solo comedy leads"},
+  "Goundamani":        {w:["Apoorva Sagodharargal","Michael Madana Kama Rajan","Gentleman","Mudhalvan"],f:"The Goundamani-Senthil duo is the most iconic comedy pair in Tamil cinema history"},
+  "Senthil":           {w:["Apoorva Sagodharargal","Gentleman","Michael Madana Kama Rajan","Murattu Kaalai"],f:"One half of the legendary Goundamani-Senthil comedy duo"},
+  "Yogi Babu":         {w:["Namma Veettu Pillai","Comali","Soorarai Pottru","Demonte Colony 2"],f:"Appeared in 50+ films in just 4 years — Tamil cinema's busiest comedian"},
+  "Soori":             {w:["Velaiyilla Pattathari","Rajinimurugan","Thaanaa Serndha Koottam","Viswasam","Pattas"],f:"Started as a comedian and became a full-fledged lead actor"},
+  "Robo Shankar":      {w:["Kaaki Sattai","Thaanaa Serndha Koottam","Soorarai Pottru"],   f:"Known for physical comedy and eccentric character roles"},
+  "RJ Balaji":         {w:["LKG","Mookuthi Amman","Veetla Vishesham","Doctor"],           f:"Popular radio jockey who became a comedian, actor and director"},
+  "Redin Kingsley":{"w":["Doctor","Beast","Jailer","Mark Antony"],"f":"Known for his eccentric voice and unique comic timing; rose to fame after Doctor (2021)"},
+  "Bala Saravanan":{"w":["Kuttram 23","Darling","Eetti"],"f":"Known for rural slang comedy and supporting roles"},
+  "Manobala":          {w:["Sathi Leelavathi","Rettai Vaal Kuruvi","Maaveeran"],           f:"Veteran comedian-director-actor with 500+ films across 4 decades"},
+  "Singamuthu":{"w":["Dhool","Saamy","Winner"],"f":"Frequent collaborator of Vadivelu in comedy tracks"},
+  "Thambi Ramaiah":    {w:["Pasanga","Kadaikutty Singam","Namma Veettu Pillai"],           f:"Also a director; equally known for emotional and comic roles in Tamil films"},
+  "Kovai Sarala":{"w":["Kanchana","Sathi Leelavathi","Muni"],"f":"One of the most iconic female comedians in Tamil cinema"},
+  "Nagesh":            {w:["Server Sundaram","Inaindha Kaigal (2012)"],                    f:"Pioneered comedy in Tamil cinema in the 1960s; a deeply loved legend"},
+  "Cho Ramaswamy":{"w":["Muhammad bin Tughlaq"],"f":"Satirist, playwright and political commentator"},
+  "S.V. Shekar":{"w":["Various stage plays"],"f":"Legendary stage comedian with long-running theatre career"},
+  "Chinni Jayanth":{"w":["Apoorva Sagodharargal","Gentleman"],"f":"Known for mimicry and expressive comedy"},
+  "Manivannan":{"w":["Amaidhi Padai","Mudhalvan","Nagaraja Cholan MA MLA"],"f":"Actor-director with 800+ films"},
+  "Ilavarasu":{"w":["Autograph","Lingaa","Kadaikutty Singam","Thiruda Thirudi"],"f":"National Award-winning cinematographer turned actor"},
+  "Mottai Rajendran":{"w":["Boss Engira Bhaskaran","Darling","Vedalam"],"f":"Known for his bald look and loud comedic style"},
+  "Loose Mohan":{"w":["Various 70s-80s films"],"f":"Known for slapstick comedy and flexible body language"},
+  "Vennira Aadai Moorthy":{"w":["Vennira Aadai","Michael Madana Kama Rajan"],"f":"Famous for witty and sarcastic humour"},
+  "T.S. Muthaiah":{"w":["Various Tamil films"],"f":"Veteran comedian and supporting actor"},
+  "N.S. Krishnan":{"w":["Manamagal","Paithiyakaran"],"f":"Pioneer of Tamil cinema comedy"},
+  "Suruli Rajan":{"w":["16 Vayathinile","Apoorva Raagangal"],"f":"Known for distinctive voice and rural comedy"},
+  "Major Sundarrajan":{"w":["Server Sundaram","Bama Vijayam"],"f":"Known for authoritative and comedic roles"},
+  "Kaka Radhakrishnan":{"w":["Various classic Tamil films"],"f":"Popular comedian of 70s-80s cinema"},
+  "Ganthimathi":{"w":["Karagattakaran","Mann Vasanai"],"f":"Known for strong village comedy roles"},
+  "Ramarajan":{"w":["Karagattakaran","Enga Ooru Pattukaran"],"f":"One of the biggest rural stars of 80s Tamil cinema"},
+  "Nellai Saravanan":{"w":["Various Tamil films"],"f":"Known for Tirunelveli dialect comedy"},
+  "Thengai Srinivasan":{"w":["Kasethan Kadavulada","Thillu Mullu"],"f":"Legendary comedian of 70s Tamil cinema"},
+  "Pyramid Natarajan":{"w":["Nayakan","Baasha"],"f":"Known for supporting comic roles"},
+  "Venniradai Moorthy":{"w":["Vennira Aadai"],"f":"Famous for wordplay humour"},
+  "Charuhasan":        {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Younger brother of Kamal Haasan; acclaimed character actor in Tamil films"},
+  "Vidyullekha Raman":{"w":["Neethaane En Ponvasantham","Veeram"],"f":"Popular female comedian of modern Tamil cinema"},
+  "Lollu Sabha Maran": {w:["Lollu Sabha (TV)","Inaindha Kaigal (2012)"],                  f:"From the iconic Lollu Sabha team that revolutionised Tamil TV comedy"},
+  "Lollu Sabha Jeeva": {w:["Lollu Sabha (TV)","Inaindha Kaigal (2012)"],                  f:"From the iconic Lollu Sabha team; known for quick-witted political satire"},
+  "Powerstar Srinivasan":{"w":["Kanna Laddu Thinna Aasaiya"],"f":"Cult comedy personality and internet meme figure"},
+  "Praveen Kumar":{"w":["Various Tamil films"],"f":"Known for supporting comedy roles"},
+  "Sathish":{"w":["Ethir Neechal","Maan Karate","Bairavaa","Varisu"],"f":"Frequent comedian in Vijay films"},
+  "Vivek Prasanna":{"w":["Meyaadha Maan","Vikram Vedha"],"f":"Known for naturalistic acting and comedy timing"},
+  "Murugesan":{"w":["Various rural films"],"f":"Known for rustic comedy style"},
+  "Balachandran":{"w":["Various Tamil films"],"f":"Supporting comedian in commercial cinema"},
+  "Nalla Perumal":{"w":["Various Tamil films"],"f":"Known for regional comedy roles"},
+  "Nallaperumal":{"w":["Various Tamil films"],"f":"Known for regional comedy roles"},
+  "Vickram":{"w":["Various Tamil films"],"f":"Known for energetic screen presence"},
+  "Kella Ravi":{"w":["80s-90s Tamil films"],"f":"Veteran supporting comedian"},
+  "Swaminathan":{"w":["Boss Engira Bhaskaran","Desingu Raja"],"f":"Known for sarcastic comedy timing"},
+  "Koundamani":{"w":["Karagattakaran","Gentleman","Indian"],"f":"One of the greatest Tamil comedians; part of iconic duo with Senthil"},
+  "K.R. Vijaya":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Legendary Tamil actress known for powerful character roles in hundreds of films"},
+  "Ganapath":          {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Tamil comedian known for his rustic style in rural-themed Tamil films"},
+  "Ramu":              {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Tamil comedian known for slapstick comedy in commercial entertainers"},
+  "Alangaram":         {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Tamil comedian known for his energetic comic performances"},
+  "Thambu":            {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Veteran Tamil comedian known for his distinct mannerisms"},
+  "Raghunathan":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Tamil comedian known for his energetic supporting roles"},
+  "Raja":              {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Tamil comedian known for his comic roles in popular mass entertainers"},
+  // ── MUSIC DIRECTORS ──
+  "A.R. Rahman":       {w:["Roja","Bombay","Dil Se","Alaipayuthey","Enthiran","Ponniyin Selvan"],f:"Won 2 Oscars for Slumdog Millionaire — first Indian to win an Oscar for music"},
+  "Ilaiyaraaja":       {w:["Mouna Ragam","Agni Natchathiram","Nayakan","Thalapathi","16 Vayathinile"],f:"Composed 1000+ film scores; first Asian to record with London Symphony at Abbey Road"},
+  "Harris Jayaraj":    {w:["Kaakha Kaakha","Ghajini","Vinnaithaandi Varuvaayaa","Yennai Arindhaal","Vaaranam Aayiram"],f:"Known for lush orchestral scores; his Kaakha Kaakha OST changed Tamil film music"},
+  "D. Imman":          {w:["Viswasam","Namma Veettu Pillai","Theri","Thaanaa Serndha Koottam"],f:"Most awarded Tamil music director at Filmfare Awards South in recent years"},
+  "Yuvan Shankar Raja":{w:["7G Rainbow Colony","Aaranya Kaandam","Mankatha","Goa","Inaindha Kaigal (2012)"],f:"Son of Ilaiyaraaja; pioneered hip-hop and electronic sounds in Tamil cinema"},
+  "G.V. Prakash Kumar":{w:["Mayakkam Enna","Inaindha Kaigal (2012)"],            f:"Nephew of A.R. Rahman; music composer who also stars as lead actor"},
+  "Anirudh Ravichander":{w:["3","Kaththi","Master","Vikram","Leo","Jailer"],               f:"Debuted at 21 with 'Why This Kolaveri Di'; nephew of Rajinikanth"},
+  "Santhosh Narayanan":{w:["Pariyerum Perumal","Karnan","Jai Bhim","Irudhi Suttru"],      f:"Known for blending folk and electronic music; frequent Pa. Ranjith collaborator"},
+  "Justin Prabhakaran":{w:["Thadam","Andava Kaanom","Nenjam Marappathillai","Ratsasan"],  f:"Most prolific Tamil music director; composed for 10+ films in a single year"},
+  "Vidyasagar":        {w:["Kaakha Kaakha","Sillunu Oru Kaadhal","New","Ghajini (Tamil)"],f:"Known for melodious, sweeping romantic scores; closely associated with Gautham Menon"},
+  "S.A. Rajkumar":     {w:["Padikkadavan","Gopura Vasalile","Chinna Thambi","Mounam Sammadham"],f:"Veteran composer who dominated Tamil music in the 1980s and 90s"},
+  "Deva":              {w:["Muthu","Kaadhal Mannan","Kadhalukku Mariyadhai","Chinna Thambi"],f:"Composed the blockbuster 'Muqabala Muqabala' for Kadhalan (1994)"},
+  "Bharathwaj":        {w:["Minsara Kanavu","Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],f:"Veteran composer known for classical melodies across 300+ Tamil films"},
+  "K.V. Mahadevan":    {w:["Thiruvilaiyadal","Karnan","Sivaji Ganesan classics"],          f:"Legendary composer; his Thiruvilaiyadal (1965) songs remain timeless classics"},
+  "M.S. Viswanathan":  {w:["Kavikkuyil","Ninaithale Inikkum","Inaindha Kaigal (2012)"],   f:"'MSV' composed 5000+ songs; regarded as one of the last old masters of Tamil film music"},
+  "Gangai Amaran":{"w":["Karagattakaran","Enga Ooru Pattukaran"],"f":"Brother of Ilaiyaraaja; lyricist, composer and director"},
+  "Ghibran":           {w:["Uttama Villain","Vai Raja Vai","Inaindha Kaigal (2012)"],      f:"Known for emotional background scores; composed for Kamal Haasan's Uttama Villain"},
+  "Karthik Raja":{"w":["Dum Dum Dum","Rettai Jadai Vayasu"],"f":"Son of Ilaiyaraaja; part of the family musical lineage"},
+  "James Vasanthan":{"w":["Subramaniapuram","Pasanga"],"f":"Known for emotionally rich background scores"},
+  "Hiphop Tamizha Adhi":{w:["Natpe Thunai","Inaindha Kaigal (2012)"],                     f:"Pioneer of Tamil hip-hop; launched career with viral internet songs before films"},
+  "Leon James":{"w":["Ko 2","Tik Tik Tik","Oh My Kadavule"],"f":"Known for modern youthful commercial compositions"},
+  "Devi Sri Prasad":   {w:["Pushpa","Ala Vaikunthapurramuloo","Inaindha Kaigal (2012)"],  f:"Known as 'DSP'; composed the iconic Pushpa songs including Srivalli"},
+  "Srikanth Deva":{"w":["Aai","Kovai Brothers"],"f":"Son of composer Deva; known for folk-style mass songs"},
+  "Joshua Sridhar":{"w":["Kadhal","Kalloori"],"f":"Known for soulful romantic melodies"},
+  "T.V. Rathnam":{"w":["Various classic Tamil films"],"f":"Veteran composer associated with early Tamil cinema music"},
+  "Achu Rajamani":{"w":["Vanakkam Chennai","Kirumi"],"f":"Son of composer Rajamani; known for indie-style music"},
+  "Sam C.S.":          {w:["Vikram Vedha","Inaindha Kaigal (2012)"],                       f:"Known for haunting background scores; composed the iconic Vikram Vedha BGM"},
+  "Hesham Abdul Wahab":{"w":["Hridayam","Kushi"],"f":"Known for viral melodies and fresh sound design"},
+  "C. Rajamani":{"w":["Various Tamil films"],"f":"Veteran composer with contributions to classical-style scores"},
+  "Sirpi":{"w":["Ullathai Allitha","Unnidathil Ennai Koduthen"],"f":"Known for melodious 90s Tamil film music"},
+  "Radhan":            {w:["Uppena","Inaindha Kaigal (2012)"],                             f:"Known for Uppena's mega hit BGM; one of Telugu cinema's top composers"},
+  "Thaman S.":         {w:["Pushpa","Inaindha Kaigal (2012)"],                             f:"One of Telugu and Tamil cinema's most in-demand composers"},
+  "Mark K. Robin":     {w:["Aranmanai","Inaindha Kaigal (2012)"],                         f:"Known for horror film BGMs; composed for the Aranmanai franchise"},
+  "Vivek Siva":        {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Part of the Vivek-Mervin duo; known for peppy Tamil commercial numbers"},
+  "Mervin Solomon":    {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Part of the Vivek-Mervin duo; produced hit songs for Tamil blockbusters"},
+  "Dharan Kumar":      {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Known for emotional BGMs; composed for several acclaimed Tamil films"},
+  "Nivas K. Prasanna": {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Talented Tamil composer known for melodic and soulful film scores"},
+  "Sean Roldan":       {w:["Irudhi Suttru","Inaindha Kaigal (2012)"],                     f:"Blends western and classical elements; composed the acclaimed Irudhi Suttru score"},
+  "Govind Vasantha":   {w:["96","Inaindha Kaigal (2012)"],                                f:"The 96 film soundtrack is one of Tamil cinema's most cherished albums"},
+  "Sai Abhyankkar":    {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Emerging Tamil composer known for breezy, youthful soundtracks"},
+  "Sid Sriram":        {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],            f:"Indian-American singer-composer; his soulful voice became a Tamil pop phenomenon"},
+  "S.P.Balasubramaniam":{w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],          f:"Legendary playback singer with 40,000+ recorded songs; holds Guinness World Record"},
+  "K.J.Yesudas":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Padma Vibhushan awardee; one of India's greatest classical and playback singers"},
+  "K.S.Chithra":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Padma Bhushan awardee; sung thousands of hit songs in Tamil, Telugu and Malayalam"},
+  "S.Janaki":          {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"One of the most prolific playback singers; sang in 17 languages over 5 decades"},
+  "P.Susheela":        {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Veteran playback singer who sang for MGR and Sivaji Ganesan era Tamil films"},
+  "T.M. Sounderrajan": {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Legendary playback singer who lent his voice to most of MGR's iconic films"},
+  "Vijay Yesudas":     {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Son of K.J. Yesudas; popular playback singer in Tamil and Malayalam cinema"},
+  "Chinmayi":          {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Popular Tamil singer and dubbing artist known for her crystal-clear voice"},
+  "Haricharan":        {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Versatile playback singer who has sung for A.R. Rahman and D. Imman"},
+  "Karthik (singer)":  {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Popular Tamil playback singer known for romantic melodies across many films"},
+  "Saindhavi":         {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Popular female playback singer in Tamil; wife of G.V. Prakash Kumar"},
+  "Benny Dayal":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"High-energy playback singer known for peppy songs in Tamil and Bollywood"},
+  "Sathyaprakash":     {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Tamil playback singer known for his vast range and energetic performances"},
+  "Swetha Mohan":      {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Popular Tamil and Malayalam playback singer with a soothing voice"},
+  "Uma Ramanan":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Veteran Tamil playback singer known for emotional and classical songs"},
+  "Anuradha Sriram":   {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Renowned playback singer who sang numerous hit songs for Ilaiyaraaja"},
+  "Vani Jayaram":      {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Legendary singer who sang for Ilaiyaraaja's classic Tamil film songs"},
+  "P. Leela":          {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Pioneer female playback singer of Tamil and Malayalam cinema from the 1940s"},
+  "Sirkazhi Govindarajan":{w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],        f:"Legendary Tamil devotional and playback singer from the golden era of Tamil cinema"},
+  "Unni Krishnan":     {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Classical vocalist and playback singer known for his refined, emotive voice"},
+  "Sujatha":           {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Veteran Tamil playback singer closely associated with A.R. Rahman's early work"},
+  "Mano":              {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Popular Tamil playback singer who sang for top heroes in the 90s"},
+  "P.B. Srinivas":     {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Legendary Tamil and Telugu playback singer from the 1950s-70s golden era"},
+  "Kousalya":          {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Tamil playback singer known for her melodious and expressive voice"},
+  "Swarnalatha":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Renowned Tamil playback singer closely associated with A.R. Rahman hits"},
+  "Malaysia Vasudevan":{w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Veteran Tamil playback singer known for romantic duets in 70s and 80s films"},
+  "Kunnakudi Vaidyanathan":{w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],       f:"Legendary Tamil violinist who elevated Ilaiyaraaja's classical compositions"},
+  "Ilayaraja (alt)":   {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"See Ilaiyaraaja — same legendary composer; alternate spelling variant"},
+  "Devan Ekambaram":   {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Tamil composer known for emotionally resonant film soundtracks"},
+  "Naresh Iyer":       {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Playback singer who sang iconic songs for A.R. Rahman and Harris Jayaraj"},
+  "Gaana Balachandar": {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Tamil folk and gaana singer who brought street music into mainstream Tamil cinema"},
+  "Mahalakshmi Iyer":  {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Versatile playback singer known for classical and devotional Tamil songs"},
+  "Anand Aravindakshan":{w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],          f:"Tamil singer-composer known for his melodious Tamil film songs"},
+  "Ranjit Jesudas":    {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Son of K.J. Yesudas; playback singer known for romantic Tamil numbers"},
+  "Shweta Mohan":      {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Popular playback singer in Tamil and Malayalam; daughter of M.G. Sreekumar"},
+  "Vandana Srinivasan":{w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Tamil playback singer known for her melodious voice in Tamil film songs"},
+  "Udit Narayan":      {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Legendary Bollywood singer who also sang dubbed and original Tamil songs"},
+  "Arunraja Kamaraj":  {w:["Inaindha Kaigal (2012)","Inaindha Kaigal (2012)"],           f:"Lyricist-director known for emotional storytelling in Tamil films"},
+  "Ameer Sultan":{"w":["Paruthiveeran","Raam","Aadhi Bhagavan"],"f":"Known for intense rural storytelling; launched Karthi's career"},
+  "Rajkumar Periasamy":{"w":["Rangoon","Amaran"],"f":"Former assistant to A.R. Murugadoss"},
+  "Elan":{"w":["Pyaar Prema Kaadhal","Star"],"f":"Known for youth-centric romantic dramas"},
+
+};
+// Merge into PERSON_WORKS — stripping all placeholder entries and deduplicating
+Object.keys(PW).forEach(k=>{
+  const entry = PW[k];
+  const seen = new Set();
+  const cleanWorks = entry.w
+    .filter(w => !w.startsWith("Inaindha Kaigal"))
+    .filter(w => seen.has(w) ? false : seen.add(w));
+  PERSON_WORKS[k] = { works: cleanWorks, fact: entry.f };
+});
+const GD = {
+  actors:[
+    "Rajinikanth","Kamal Haasan","Vijay","Ajith Kumar","Vikram","Suriya","Dhanush","Karthi",
+    "Sivakarthikeyan","Vijay Sethupathi","Arya","Jayam Ravi","Vishal","Silambarasan","Prashanth",
+    "Sarath Kumar","Prabhu","Arun Vijay","Atharvaa","Harish Kalyan","Raghava Lawrence","Bobby Simha",
+    "Yogi Babu","Soori","Sathyaraj","Nassar","Prabhudeva","Vijayakanth","Mohan","Napoleon",
+    "Samuthirakani","Kishore","Vijay Antony","Siddharth","Aravind Swamy","Jai","Bharath",
+    "Karthik Sivakumar","Mime Gopi","Munishkanth","Bose Venkat","Daniel Annie Pope","Karunakaran",
+    "Redin Kingsley","Manobala","Thambi Ramaiah","RJ Balaji","Robo Shankar","Pugazh","Karthik Kumar",
+    "Charle","Ma Ka Pa Anand","Ramesh Thilak","Ilavarasu","Radharavi","K.S.Ravikumar","Anandaraj",
+    "Delhi Ganesh","Nandha","Srikanth","Vikram Prabhu","Vineeth","Thiagarajan","Vikraman",
+    "Saran","Karthik","Rio Raj","Ashok Selvan","Arulnithi","Jiiva","G.V. Prakash Kumar","Ramarajan",
+    "Abbas","Vikranth","Prem Kumar","Sundar C","Narain","Cheran","Sharath Babu","Nagesh",
+    "M.R.Radha","Pandiarajan","Murali","T.Rajendar","Thavakalai","Karthikeya","Bharathidasan",
+    "Bhagyaraj","Arun Pandian","Mysskin","Bose Venkat","Rahman",
+    "Ashok Selvan","Sathish","Dinesh","Vidharth","Aari","Ma Ka Pa Anand","Vimal"
+  ],
+  actresses:[
+    "Nayanthara","Jyothika","Trisha Krishnan","Samantha Ruth Prabhu","Sai Pallavi",
+    "Keerthy Suresh","Nithya Menen","Ramya Krishnan","Roja","Revathi","Meena","Sneha",
+    "Urvashi","Raadhika Sarathkumar","Khushbu Sundar","Suhasini Maniratnam","Saritha","Ambika",
+    "Tamannaah Bhatia","Hansika Motwani","Andrea Jeremiah","Amala Paul","Varalaxmi Sarathkumar",
+    "Priya Anand","Shruti Haasan","Laila","Shalini","Padmapriya","Kamalinee Mukherjee",
+    "Parvathy Thiruvothu","Riythvika","Anushka Shetty","Rashmika Mandanna","Rakul Preet Singh",
+    "Nagma","Mamta Mohandas","Malavika Mohanan","Oviya","Prayaga Martin","Madonna Sebastian",
+    "Anjali","Aishwarya Rajesh","Asin","Bhavana","Sunainaa","Vani Bhojan","Megha Akash",
+    "Aathmika","Indhuja Ravichandran","Devayani","Sangitha","Saroja Devi","Suganya","Seetha",
+    "Kanaka","Nalini","Sanusha","Dhansika","Archana Kavi","Gayathrie Shankar","Anu Emmanuel",
+    "Saranya Ponvannan","Rohini","Saranya","Devadarshini","Bhanupriya","Vijayalakshmi",
+    "Shanthipriya","Lakshmi","Vimala Raman","Catherine Tresa","Amy Jackson","Kaniha",
+    "Swathi Reddy","Manisha Yadav","Kasthuri","Hemalatha","Geetha","Tanya Hope",
+    "Manasa Radhakrishnan","Yaashika Aanand","Mia George","Sanchita Shetty","Preethi Asrani",
+    "Latha","Gouthami","Mumtaz","Shobana","Simran","Sanghavi","Nakshathra","Mythili",
+    "Ashwini","Swasika","Niveditha","Vidya Pradeep","Amala Paul","Pooja Hegde","Bindhu Madhavi",
+    "Lakshmi Gopalaswamy","Parvathi Menon","Nadia","Vidhya","Sridevi","Shakila"
+  ],
+  movies:[
+    "Baashha (1995)","Muthu (1995)","Padayappa (1999)","Enthiran (2010)","Kabali (2016)",
+    "2.0 (2018)","Jailer (2023)","Vettaiyan (2024)","Vikram (2022)","Thalapathi (1991)",
+    "Nayakan (1987)","Guna (1991)","Thevar Magan (1992)","Kuruthipunal (1995)","Indian (1996)",
+    "Dasavathaaram (2008)","Vinnaithaandi Varuvaayaa (2010)","Vishwaroopam (2013)","Papanasam (2015)",
+    "Vikram Vedha (2017)","Mersal (2017)","Sarkar (2018)","Master (2021)","Beast (2022)","Leo (2023)",
+    "Mankatha (2011)","Billa (2007)","Vivegam (2017)","Valimai (2022)","Thunivu (2023)",
+    "Kadhal Kondein (2003)","Pudhupettai (2006)","Polladhavan (2007)","Aadukalam (2011)",
+    "Maryan (2013)","Vada Chennai (2018)","Asuran (2019)","Soorarai Pottru (2020)","Karnan (2021)",
+    "Ayan (2009)","7aum Arivu (2011)","Singam (2010)","24 (2016)","Ponniyin Selvan I (2022)",
+    "Ponniyin Selvan II (2023)","Alaipayuthey (2000)","Bombay (1995)","Roja (1992)",
+    "Naan Kadavul (2009)","O Kadhal Kanmani (2015)","Kaatru Veliyidai (2017)",
+    "Chekka Chivantha Vaanam (2018)","Gentleman (1993)","Anbe Sivam (2003)","Kaakha Kaakha (2003)",
+    "Ghajini (2005)","Vaaranam Aayiram (2008)","Maattrraan (2012)","Soodhu Kavvum (2013)",
+    "Naanum Rowdy Dhaan (2015)","Petta (2019)","Super Deluxe (2019)","Mandela (2021)",
+    "Doctor (2021)","Kadaikutty Singam (2018)","Pariyerum Perumal (2018)","Kaala (2018)",
+    "Sarpatta Parambarai (2021)","Annaathe (2021)","Maanagaram (2017)","Kaithi (2019)",
+    "Merry Christmas (2024)","Raayan (2024)","Amaran (2024)","GOAT (2024)","Theri (2016)",
+    "Bigil (2019)","Remo (2016)","Velaikkaran (2017)","Thuppakki (2012)","Kaththi (2014)",
+    "Jilla (2014)","Bairavaa (2017)","Seemaraja (2018)","Namma Veettu Pillai (2019)",
+    "Mouna Ragam (1986)","Agni Natchathiram (1988)","Iruvar (1997)","Kannathil Muthamittal (2002)",
+    "Aayitha Ezhuthu (2004)","Raavanan (2010)","Paruthiveeran (2007)","Subramaniapuram (2008)",
+    "Jai Bhim (2021)","Theeran Adhigaaram Ondru (2017)","Kanchana (2011)","Jigarthanda (2014)",
+    "Anniyan (2005)","96 (2018)","Seethakaathi (2018)","Visaranai (2015)","Ratsasan (2018)",
+    "Inaindha Kaigal (1985)","Naan Kadavul (2009)","Sethu (1999)","Moondram Pirai (1982)","16 Vayathinile (1977)","Ninaithale Inikkum (1979)"
+  ],
+  directors:[
+    "Mani Ratnam","K. Balachander","Bharathiraja","Selvaraghavan","Shankar","A.R. Murugadoss","Gautham Menon","Pa. Ranjith","Vetrimaaran","Lokesh Kanagaraj","Nelson Dilipkumar","Atlee Kumar","Karthik Subbaraj","Suresh Krishna","Lingusamy","K.V. Anand","Radha Mohan","Venkat Prabhu","Cheran","Ameer Sultan","Sudha Kongara","Rajkumar Periasamy","Elan","Balu Mahendra","Mari Selvaraj","Halitha Shameem","S.J. Suryah","Vijay Milton","Seenu Ramasamy","Raju Murugan","S.A. Chandrasekhar","T. Rajendran","Sundar C","Prabhu Solomon","Hari","Magizh Thirumeni","Gokul","Parthiban Kandasamy","Agathiyan","Muthaiah","Thiru","Ramkumar","K. Bhagyaraj","Nalan Kumarasamy","Kiruthiga Udhayanidhi","Arivazhagan","R. Kannan","N. Rajasekar","M. Rajesh","Pandiraj","Ezhil","Aswin Saravanan","Arun Raja Kamaraj","S. Prem Anand","Rajesh M. Selva","Rajiv Menon","Bhaskar","Suseenthiran","M. Sasikumar","Perarasu","Karthik G. Krish","Gowtham Sundarrajan","Priyadarshan","P. Padmarajan","Sakthi Rajasekaran","M.S. Rajendar","R.K. Selvamani","K.S. Adhiyaman","A.C. Tirulokchandar","A.P. Nagarajan","K. Viswanath","Caarthick Raju"
+  ],
+  songs:[
+    "Roja Janeman – Roja (1992)",
+    "Chinna Chinna Aasai – Roja (1992)",
+    "Kadhal Rojave – Roja (1992)",
+    "Mental Manadhil – O Kadhal Kanmani (2015)",
+    "Pudhu Vellai Mazhai – Roja (1992)",
+    "Thamizha Thamizha – Roja (1992)",
+    "Tu Hi Re – Bombay (1995)",
+    "Kehna Hi Kya – Bombay (1995)",
+    "Hamma Hamma – Bombay (1995)",
+    "Uyire – Bombay (1995)",
+    "Kumari – Bombay (1995)",
+    "Muqabala Muqabala – Kadhalan (1994)",
+    "Kannaethirey Thondrinal – Kadhalan (1994)",
+    "Ennavale – Kadhalan (1994)",
+    "Snehithane – Alaipayuthey (2000)",
+    "Kadhal Sadugudu – Alaipayuthey (2000)",
+    "Evano Oruvan – Alaipayuthey (2000)",
+    "Poongatru Thirumbuma – Mouna Ragam (1986)",
+    "Mounam Pesiyadhe – Mouna Ragam (1986)",
+    "En Uyire – Agni Natchathiram (1988)",
+    "Thee Thee – Agni Natchathiram (1988)",
+    "Valayosai – Agni Natchathiram (1988)",
+    "Ennai Konjam – Kaakha Kaakha (2003)",
+    "Thoodhu Varuma – Kaakha Kaakha (2003)",
+    "Kilimanjaro – Enthiran (2010)",
+    "Boom Boom – Enthiran (2010)",
+    "Irumbile Oru Irudham – Enthiran (2010)",
+    "Hosanna – Vinnaithaandi Varuvaayaa (2010)",
+    "Mannipaaya – Vinnaithaandi Varuvaayaa (2010)",
+    "Omana Penne – Vinnaithaandi Varuvaayaa (2010)",
+    "Vaathi Coming – Master (2021)",
+    "Kutti Story – Master (2021)",
+    "Love Theme – Master (2021)",
+    "Singappenney – Bigil (2019)",
+    "Verithanam – Bigil (2019)",
+    "Hey Gayle – Bigil (2019)",
+    "Petta Rap – Petta (2019)",
+    "Marana Mass – Petta (2019)",
+    "Rowdy Baby – Maari 2 (2018)",
+    "Kannaana Kanney – Viswasam (2019)",
+    "Nee Sirindhaal – Viswasam (2019)",
+    "Jailer Kuthu – Jailer (2023)",
+    "Hukum – Jailer (2023)",
+    "Kaavaalaa – Jailer (2023)",
+    "Pathala Pathala – Vikram (2022)",
+    "Nee Yaarumille – Vikram (2022)",
+    "Balle Balle – Vikram (2022)",
+    "Aalaporan Tamizhan – Mersal (2017)",
+    "Thalli Pogathey – Achcham Yenbadhu Madamaiyada (2016)",
+    "Rasaali – Achcham Yenbadhu Madamaiyada (2016)",
+    "Enjoy Enjaami – Independent Single (2021)",
+    "Pogadhey – Soorarai Pottru (2020)",
+    "Hey Sinamika – Hey Sinamika (2022)",
+    "Adiye – Maryan (2013)",
+    "Innum Konjam Neram – Maryan (2013)",
+    "Antha Naal – Maryan (2013)",
+    "Ennodu Nee Irundhaal – I (2015)",
+    "Vellai Pookal – Kannathil Muthamittal (2002)",
+    "Mayakadha Magizhchi – 7aum Arivu (2011)",
+    "Kaa Kaa – 7aum Arivu (2011)",
+    "Rekka – Remo (2016)",
+    "Kaadhirae – Remo (2016)",
+    "Lailaa O Lailaa – Remo (2016)",
+    "Danga Maari Oodhari – Theri (2016)",
+    "Idhayam – Theri (2016)",
+    "Kaadhal Kondein – Kadhal Kondein (2003)",
+    "Netru Illatha Matram – Pudhupettai (2006)",
+    "Aananda Raagam – Anbe Sivam (2003)",
+    "Unakenna Venum Sollu – Minnale (2001)",
+    "Vennila Vennilave – Minnale (2001)",
+    "Keladi Kanmani – Keladi Kanmani (1990)",
+    "Kaatteri Mogam – Raavanan (2010)",
+    "Mazhai Kuruvi – Chekka Chivantha Vaanam (2018)",
+    "Na Ready – Thunivu (2023)",
+    "Voda Voda – Mayakkam Enna (2011)",
+    "Kannukkul Nooru Nilava – Vedham Pudhithu (1987)",
+    "Poo – Poo (2009)",
+    "Idharkuthane Aasaipattai – IAAB (2013)",
+    "Kattu Moosiyo – Kannum Kannum Kollaiyadithaal (2020)",
+    "Un Mela Oru Kannu – Saahasam (2016)",
+    "Poo Poo Poo – Rajinimurugan (2016)",
+    "Naana Thaana – Thaanaa Serndha Koottam (2018)",
+    "Maanadu Thiranthathu – Maanadu (2021)",
+    "Karuppu Vellai – Sarpatta Parambarai (2021)",
+    "Mazhalai Mazhalai – Ponniyin Selvan I (2022)",
+    "Oru Naalil – Ponniyin Selvan I (2022)",
+    "Vaadi Vaadi – Saamy (2003)",
+    "En Anbe En Anbe – Mynaa (2010)",
+    "Idhazhin Oram – 96 (2018)",
+    "Kannamoochi Yenada – Kandukondain Kandukondain (2000)",
+    "Uyirin Uyire – Kaakha Kaakha (2003)",
+    "Maruvaarthai Pesadhey – Enai Noki Paayum Thota (2019)",
+    "Mudhal Nee Mudivum Nee – 96 (2018)",
+    "Swasa Kaatre – Indira (1995)",
+    "Nenjukkul Peidhidum – Vaaranam Aayiram (2008)",
+    "Oru Maalai – Ghajini (2005)",
+    "Suttum Vizhi – Ghajini (2005)"
+  ],
+  comedians:[
+    "Vadivelu","Vivekh","Santhanam","Goundamani","Senthil","Yogi Babu","Soori","Robo Shankar",
+    "RJ Balaji","Redin Kingsley","Bala Saravanan","Manobala","Singamuthu","Thambi Ramaiah",
+    "Kovai Sarala","Ma Ka Pa Anand","Ramesh Thilak","Pugazh","Karunakaran","Daniel Annie Pope",
+    "Mime Gopi","Munishkanth","Karthik Kumar","Charle","S.V. Shekar","Bose Venkat",
+    "Mottai Rajendran","Manivannan","Loose Mohan","Vennira Aadai Moorthy","T.S. Muthaiah",
+    "N.S. Krishnan","Nagesh","Cho Ramaswamy","Suruli Rajan","Major Sundarrajan",
+    "Kaka Radhakrishnan","Pandiarajan","Ganthimathi","Ramarajan","Ilavarasu","Delhi Ganesh",
+    "Nellai Saravanan","Chinni Jayanth","Anandaraj","Thengai Srinivasan","Pyramid Natarajan",
+    "Radharavi","Thavakalai","Venniradai Moorthy","Vidyullekha Raman",
+    "Lollu Sabha Maran","Lollu Sabha Jeeva","Powerstar Srinivasan","Praveen Kumar","Sathish",
+    "Vivek Prasanna","Murugesan","Balachandran",
+    "Nalla Perumal","Vickram","Kella Ravi","Swaminathan","Pyramid Natarajan",
+    "Singamuthu","Vivek Prasanna","Murugesan","Balachandran","Nalla Perumal","Vickram",
+    "Kella Ravi","Swaminathan","Koundamani","Thengai Srinivasan","Suruli Rajan","Mottai Rajendran",
+    "Loose Mohan","Vennira Aadai Moorthy","T.S. Muthaiah","N.S. Krishnan","Kaka Radhakrishnan"
+  ],
+  music_directors:[
+    "A.R. Rahman","Ilaiyaraaja","Harris Jayaraj","D. Imman","Yuvan Shankar Raja","G.V. Prakash Kumar",
+    "Anirudh Ravichander","Santhosh Narayanan","Justin Prabhakaran","Leon James","Devi Sri Prasad",
+    "S.A. Rajkumar","Vidyasagar","Srikanth Deva","Joshua Sridhar","Bharathwaj","K.V. Mahadevan",
+    "M.S. Viswanathan","T.V. Rathnam","Gangai Amaran","James Vasanthan","Achu Rajamani","Ghibran",
+    "Sam C.S.","Karthik Raja","Hesham Abdul Wahab","C. Rajamani","Sirpi","Deva",
+    "Radhan","Thaman S.","Hiphop Tamizha Adhi","Mark K. Robin","Vivek Siva","Mervin Solomon",
+    "Dharan Kumar","Nivas K. Prasanna","Sean Roldan","Govind Vasantha","Sai Abhyankkar",
+    "Sid Sriram","Naresh Iyer","Gaana Balachandar",
+    "Mahalakshmi Iyer","S.P.Balasubramaniam","K.J.Yesudas","K.S.Chithra",
+    "S.Janaki","P.Susheela","T.M. Sounderrajan","Vijay Yesudas","Chinmayi","Anand Aravindakshan",
+    "Ranjit Jesudas","Shweta Mohan","Vani Jayaram","P. Leela","Sirkazhi Govindarajan","Unni Krishnan",
+    "Haricharan","Karthik (singer)","Saindhavi","Benny Dayal","Sathyaprakash","Swetha Mohan",
+    "Uma Ramanan","Anuradha Sriram","Vandana Srinivasan",
+    "Sujatha","Mano","P.B. Srinivas","Kousalya","Swarnalatha","Malaysia Vasudevan",
+    "Justin Prabhakaran","Radhan",
+    "Leon James","Sean Roldan","Govind Vasantha","Sai Abhyankkar","Vivek Siva","Mervin Solomon","Dharan Kumar","Nivas K. Prasanna","Mark K. Robin","Thaman S.","Sam C.S.","Ghibran","Karthik Raja","James Vasanthan","Hiphop Tamizha Adhi","Srikanth Deva","Achu Rajamani","Joshua Sridhar","T.V. Rathnam","Hesham Abdul Wahab","C. Rajamani","Sirpi"
+  ],
+  characters:[
+    "Muthu – Muthu (1995)",
+    "Baasha – Baashha (1995)",
+    "Padayappa – Padayappa (1999)",
+    "Chitti – Enthiran (2010)",
+    "Kabali – Kabali (2016)",
+    "Vikram – Vikram (2022)",
+    "Rolex – Vikram (2022)",
+    "Karnan – Karnan (2021)",
+    "Sivasaami – Asuran (2019)",
+    "Velu Naicker – Nayakan (1987)",
+    "Prabu – Thalapathi (1991)",
+    "Surya – Thalapathi (1991)",
+    "Sagayam – Thevar Magan (1992)",
+    "Muthuraja – Thevar Magan (1992)",
+    "Bhavani – Thevar Magan (1992)",
+    "Mahi – Soorarai Pottru (2020)",
+    "JD – Master (2021)",
+    "Thamarai Selvam – Master (2021)",
+    "Singam – Singam (2010)",
+    "Kumaran – Vada Chennai (2018)",
+    "Ghajini – Ghajini (2005)",
+    "Sanjay Ramaswamy – Ghajini (2005)",
+    "Anniyan – Anniyan (2005)",
+    "Raghavan – Kaakha Kaakha (2003)",
+    "Shanmughan – Aadukalam (2011)",
+    "Aryan – 7aum Arivu (2011)",
+    "Mandela – Mandela (2021)",
+    "Appayya – Annaathe (2021)",
+    "Muthuvel Pandian – Jailer (2023)",
+    "Adhi – Viswasam (2019)",
+    "Arjun – Theri (2016)",
+    "Raghuvaran – Mersal (2017)",
+    "Andre – Petta (2019)",
+    "Neelambari – Padayappa (1999)",
+    "Prabha – Vikram Vedha (2017)",
+    "Ashok Kumar – Vikram Vedha (2017)",
+    "Vedha – Vikram Vedha (2017)",
+    "Selva – Paruthiveeran (2007)",
+    "Muthupandi – Subramaniapuram (2008)",
+    "Anbuchelvan – Soodhu Kavvum (2013)",
+    "Appukutty – Soodhu Kavvum (2013)",
+    "Yogi – Naanum Rowdy Dhaan (2015)",
+    "Maayavan – Super Deluxe (2019)",
+    "Michael – Super Deluxe (2019)",
+    "Leela – Super Deluxe (2019)",
+    "Arputham – Super Deluxe (2019)",
+    "Muneeshwaran – Kanchana (2011)",
+    "Nagavalli – Chandramukhi (2005)",
+    "Kovaiselvam – Chandramukhi (2005)",
+    "Kanmani – OK Kanmani (2015)",
+    "Adhitya – OK Kanmani (2015)",
+    "Leo – Leo (2023)",
+    "Amar – Vikram (2022)",
+    "Maasilamani – Annamalai (1992)",
+    "Arulmozhivarman – Ponniyin Selvan (2022)",
+    "Kundhavai – Ponniyin Selvan (2022)",
+    "Nandini – Ponniyin Selvan (2022)",
+    "Vandiyathevan – Ponniyin Selvan (2022)",
+    "Udhaya Maha Devi – Ponniyin Selvan (2022)",
+    "Sivagami – Baahubali (2015)",
+    "Kattappa – Baahubali (2015)",
+    "Mahendra Baahubali – Baahubali (2015)",
+    "Anthony Raj – Jai Bhim (2021)",
+    "Chandru – Jai Bhim (2021)",
+    "Rajakannu – Jai Bhim (2021)",
+    "Senggeni – Jai Bhim (2021)",
+    "Durai – Asuran (2019)",
+    "Marimuthu – Pariyerum Perumal (2018)",
+    "Selvam – Pariyerum Perumal (2018)",
+    "Kumaresan – Kabali (2016)",
+    "Kumari – Paruthiveeran (2007)",
+    "Shankar – Gentleman (1993)",
+    "Murugan – Kadhalan (1994)",
+    "Karthik – Vinnaithaandi Varuvaayaa (2010)",
+    "Pooja – Vinnaithaandi Varuvaayaa (2010)",
+    "Jessie – Vinnaithaandi Varuvaayaa (2010)",
+    "Thamizh – Thamizh (2002)",
+    "Saravanan – Chandramukhi (2005)",
+    "Bose – Dhuruvangal Pathinaaru (2016)",
+    "Muni – Muni (2007)",
+    "Dilli – Kaithi (2019)",
+    "Rangan – Thalapathi (1991)",
+    "Sethupathi – Sethupathi (2016)",
+    "Appu – Apoorva Sagodharargal (1989)",
+    "Saroja – Paruthiveeran (2007)"
+  ],
+  dialogues:[
+    "Naan oru thadavai sonna nooru thadavai sonna maadiri – Baashha (1995)",
+    "Puli urumu, mazhai peyum – Baashha (1995)",
+    "Evanda nee? Naan Vikram – Vikram (2022)",
+    "Neruppu da – Kaala (2018)",
+    "Naan solluven, neenga ketpeenga – Padayappa (1999)",
+    "Kutty Story monologue – Master (2021)",
+    "Thala Ajith entry speech – Mankatha (2011)",
+    "Kaakha Kaakha climax dialogue – Kaakha Kaakha (2003)",
+    "Velu Naicker intro speech – Nayakan (1987)",
+    "Thevar Magan oath scene – Thevar Magan (1992)",
+    "Anbe Sivam philosophy dialogue – Anbe Sivam (2003)",
+    "Vikram Vedha kaadhai padichu – Vikram Vedha (2017)",
+    "Super Deluxe identity reveal – Super Deluxe (2019)",
+    "Jai Bhim justice speech – Jai Bhim (2021)",
+    "Karnan war cry – Karnan (2021)",
+    "Asuran final confrontation – Asuran (2019)",
+    "Soorarai Pottru dream speech – Soorarai Pottru (2020)",
+    "Jailer entry dialogue – Jailer (2023)",
+    "Leo transformation dialogue – Leo (2023)",
+    "Mersal doctor GST speech – Mersal (2017)",
+    "Sarkar public servant monologue – Sarkar (2018)",
+    "Enthiran logic explanation – Enthiran (2010)",
+    "Indian corruption monologue – Indian (1996)",
+    "Dasavathaaram ten avatars intro – Dasavathaaram (2008)",
+    "Vishwaroopam identity reveal – Vishwaroopam (2013)",
+    "Vikram flashback reveal – Vikram (2022)",
+    "Ponniyin Selvan war speech – Ponniyin Selvan (2022)",
+    "Pariyerum Perumal ending monologue – Pariyerum Perumal (2018)",
+    "Sarpatta Parambarai climax – Sarpatta Parambarai (2021)",
+    "Kabali dignity speech – Kabali (2016)",
+    "Kaala slum speech – Kaala (2018)",
+    "Bigil women's football finale – Bigil (2019)",
+    "Theri father-daughter emotion – Theri (2016)",
+    "Kaithi no phone rule explanation – Kaithi (2019)",
+    "Vada Chennai history lesson – Vada Chennai (2018)",
+    "7aum Arivu Tamil pride speech – 7aum Arivu (2011)",
+    "Roja love in captivity – Roja (1992)",
+    "Bombay communal peace message – Bombay (1995)",
+    "Alaipayuthey reconciliation scene – Alaipayuthey (2000)",
+    "Vinnaithaandi Varuvaayaa airport promise – Vinnaithaandi Varuvaayaa (2010)",
+    "Maryan island survival dialogue – Maryan (2013)",
+    "Polladhavan bike intro – Polladhavan (2007)",
+    "Soodhu Kavvum kidnap logic – Soodhu Kavvum (2013)",
+    "Mankatha betrayal confrontation – Mankatha (2011)",
+    "Ghajini memory revenge – Ghajini (2005)",
+    "Doctor organ racket expose – Doctor (2021)",
+    "Valimai chase bike speech – Valimai (2022)",
+    "Ponniyin Selvan II climax – Ponniyin Selvan II (2023)",
+    "Vettaiyan cop philosophy – Vettaiyan (2024)",
+    "Amaran sacrifice monologue – Amaran (2024)",
+    "Raayan brother bond speech – Raayan (2024)",
+    "MMKR intro self-introduction – Michael Madana Kama Rajan (1990)",
+    "Apoorva Sagodharargal comedy climax – Apoorva Sagodharargal (1989)",
+    "Nanban friendship speech – Nanban (2012)",
+    "Subramaniapuram friendship vow – Subramaniapuram (2008)",
+    "Jigarthanda villain introduction – Jigarthanda (2014)",
+    "24 time travel explanation – 24 (2016)",
+    "Vivegam patriotism speech – Vivegam (2017)",
+    "Vikram Vedha final choice – Vikram Vedha (2017)",
+    "96 nostalgia monologue – 96 (2018)",
+    "Visaranai interrogation scene – Visaranai (2015)",
+    "Ratsasan serial killer reveal – Ratsasan (2018)",
+    "Naan Kadavul divine rage – Naan Kadavul (2009)",
+    "Thalapathi loyalty dialogue – Thalapathi (1991)",
+    "Iruvar friendship oath – Iruvar (1997)",
+    "Kannathil Muthamittal truth scene – Kannathil Muthamittal (2002)",
+    "Guna obsession monologue – Guna (1991)",
+    "Mouna Ragam breakup argument – Mouna Ragam (1986)",
+    "Sethu madness speech – Sethu (1999)",
+    "Pithamagan graveyard monologue – Pithamagan (2003)",
+    "Maamannan dignity speech – Maamannan (2023)",
+    "Viduthalai confrontation speech – Viduthalai (2023)",
+    "Paruthi Veeran love confession – Paruthiveeran (2007)",
+    "Kadhal Kondein breakdown scene – Kadhal Kondein (2003)",
+    "Thupparivaalan logic – Thupparivaalan (2017)",
+    "NGK anger speech – NGK (2019)",
+    "Sulthan father-son – Sulthan (2021)",
+    "Aaranya Kaandam final – Aaranya Kaandam (2011)",
+    "Visaranai torture scene – Visaranai (2015)"
+  ]
+};
+
+const CATS = [
+  {id:'actors',label:'Actors'},{id:'actresses',label:'Actresses'},{id:'movies',label:'Movies'},
+  {id:'directors',label:'Directors'},{id:'songs',label:'Songs'},{id:'comedians',label:'Comedians'},
+  {id:'music_directors',label:'Music & Voice'},{id:'characters',label:'Characters'},{id:'dialogues',label:'Dialogues'}
+];
+const PERSON_CATS = new Set(['actors','actresses','directors','comedians','music_directors']);
+const AC = ['#e8002d','#f5c518','#22c55e','#3b82f6','#a855f7','#f97316','#06b6d4','#ec4899','#84cc16','#14b8a6'];
+const AE = ['🎬','🎭','🎤','🌟','🎵','🍿','🎯','🔥','💫','🎪'];
+
+// ======================================================
+// STATE
+// ======================================================
+let G = {
+  roomCode:'',myName:'',myId:'',isHost:false,players:[],
+  rounds:5,timePerRound:60,selectedCats:['actors','movies','songs'],
+  round:0,cat:'',items:[],
+  idx:0,rankMap:{},taken:new Set(),
+  allRankings:{},scores:{},allHearts:{},
+  timerInt:null,timeLeft:60,chatMsgs:[],submitted:false,usedCats:[],
+  voteLabels:{},myVotes:{},lockedIn:new Set()
+};
+let simT={};
+
+// ======================================================
+// UTILS
+// ======================================================
+const shuf=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;};
+const pick10=c=>shuf(GD[c]||[]).slice(0,10);
+const mkId=()=>Math.random().toString(36).substr(2,8);
+const rndCode=()=>{const c='ABCDEFGHJKLMNPQRSTUVWXYZ';return Array.from({length:4},()=>c[0|Math.random()*c.length]).join('');};
+const colOf=id=>{let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))%AC.length;return AC[Math.abs(h)%AC.length];};
+const emOf=id=>{let h=0;for(const c of id)h=(h*17+c.charCodeAt(0))%AE.length;return AE[Math.abs(h)%AE.length];};
+const show=id=>{document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id)?.classList.add('active');};
+
+function openModal(n){document.getElementById('modal-'+n).classList.add('open');}
+function closeModal(n){document.getElementById('modal-'+n).classList.remove('open');}
+
+// ======================================================
+// LOBBY
+// ======================================================
+function createRoom(){
+  const name=document.getElementById('cr-name').value.trim();
+  if(!name){alert('Enter your name');return;}
+  closeModal('create');
+  G.myName=name;G.myId=mkId();G.isHost=true;G.roomCode=rndCode();
+  G.players=[{id:G.myId,name,isHost:true}];G.scores[G.myId]=0;
+  setupLobby();
+}
+function joinRoom(){
+  const name=document.getElementById('jo-name').value.trim();
+  const code=document.getElementById('jo-code').value.trim().toUpperCase();
+  if(!name||!code){alert('Enter name and code');return;}
+  closeModal('join');
+  G.myName=name;G.myId=mkId();G.isHost=false;G.roomCode=code;
+  G.players=[{id:'host_sim',name:'Vikram',isHost:true}];G.scores['host_sim']=0;
+  const sims=['Priya','Karthik','Deepa','Surya'].slice(0,2+0|Math.random()*2);
+  sims.forEach(n=>{const sid=mkId();G.players.push({id:sid,name:n,isHost:false});G.scores[sid]=0;});
+  G.players.push({id:G.myId,name,isHost:false});G.scores[G.myId]=0;
+  setupLobby();
+}
+function setupLobby(){
+  document.getElementById('lobby-code').textContent=G.roomCode;
+  document.getElementById('lobby-sub').textContent=`${G.players.length} player${G.players.length>1?'s':''} in room`;
+  const el=document.getElementById('cat-chips');el.innerHTML='';
+  CATS.forEach(c=>{
+    const chip=document.createElement('div');
+    chip.className='chip'+(G.selectedCats.includes(c.id)?' active':'');
+    chip.textContent=c.label;
+    chip.onclick=()=>{
+      if(G.selectedCats.includes(c.id)){if(G.selectedCats.length<=1)return;G.selectedCats=G.selectedCats.filter(x=>x!==c.id);chip.classList.remove('active');}
+      else{G.selectedCats.push(c.id);chip.classList.add('active');}
+    };
+    el.appendChild(chip);
+  });
+  document.getElementById('host-settings').style.display=G.isHost?'block':'none';
+  document.getElementById('guest-wait').style.display=G.isHost?'none':'block';
+  renderLobbyPlayers();show('lobby');
+  if(!G.isHost) setTimeout(()=>{G.rounds=5;G.selectedCats=shuf(CATS.map(c=>c.id)).slice(0,5);startGame();},3500);
+}
+function renderLobbyPlayers(){
+  const el=document.getElementById('lobby-players');el.innerHTML='';
+  G.players.forEach(p=>{
+    const col=colOf(p.id),em=emOf(p.id);
+    el.innerHTML+=`<div class="player-card${p.isHost?' host':''}"><div class="player-avatar" style="background:${col}22;color:${col}">${em}</div><div class="player-name">${p.name}</div><div class="player-status">${p.isHost?'👑 Host':'🕹 Player'}</div></div>`;
+  });
+}
+
+// ======================================================
+// GAME
+// ======================================================
+
+function randomStart(){
+  // Pick 3-6 random categories, random rounds (3-7), random time (45/60/90s)
+  const allCats = CATS.map(c=>c.id);
+  const shuf = a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;};
+  const n = 3 + (0|Math.random()*4); // 3-6 categories
+  G.selectedCats = shuf(allCats).slice(0, n);
+  G.rounds = 3 + (0|Math.random()*5); // 3-7 rounds
+  G.timePerRound = [45,60,90][0|Math.random()*3];
+  // Update UI to reflect random picks
+  document.getElementById('rounds-sel').value = G.rounds;
+  document.getElementById('time-sel').value = G.timePerRound;
+  // Update category chips
+  document.querySelectorAll('#cat-chips .chip').forEach(chip=>{
+    const cat = CATS.find(c=>c.label===chip.textContent);
+    if(cat){
+      if(G.selectedCats.includes(cat.id)){ chip.classList.add('active'); }
+      else { chip.classList.remove('active'); }
+    }
+  });
+  // Flash a confirmation then start
+  const btn = event.target;
+  const orig = btn.textContent;
+  btn.textContent = '✓ ' + G.rounds + ' rounds · ' + G.selectedCats.length + ' cats';
+  btn.style.borderColor = 'var(--gold)'; btn.style.color = 'var(--gold)';
+  setTimeout(()=>{ btn.textContent = orig; btn.style.borderColor=''; btn.style.color=''; startGame(); }, 900);
+}
+
+function startGame(){
+  G.round=0;G.usedCats=[];G.allRankings={};G.allHearts={};
+  Object.keys(G.scores).forEach(id=>G.scores[id]=0);
+  beginNextRound();
+}
+function beginNextRound(){
+  G.round++;
+  if(G.round>G.rounds){showLeaderboard();return;}
+  const av=G.selectedCats.filter(c=>!G.usedCats.includes(c));
+  const pool=av.length?av:G.selectedCats;
+  G.cat=pool[0|Math.random()*pool.length];
+  G.usedCats.push(G.cat);
+  G.items=pick10(G.cat);
+  G.idx=0;G.rankMap={};G.taken=new Set();G.allRankings={};G.submitted=false;
+  G.voteLabels={};G.myVotes={};G.lockedIn=new Set();
+  const lbl=CATS.find(c=>c.id===G.cat)?.label||G.cat;
+  document.getElementById('rnd-lbl').textContent=`Round ${G.round} of ${G.rounds}`;
+  document.getElementById('rnd-cat').textContent=lbl;
+  buildPlaceholders();show('ranking');startTimer();
+  renderItem();
+  addChat({type:'system',event:true,text:`🎬 Round ${G.round}: Rank these ${lbl}!`});
+  simulateOthers();
+}
+
+// ======================================================
+// ONE-AT-A-TIME RANKING UI
+// ======================================================
+function renderItem(){
+  const left=document.getElementById('ranking-left');
+  const progTag=document.getElementById('prog-tag');
+  const sumTag=document.getElementById('sum-tag');
+  progTag.textContent=`${G.idx} / 10`;
+  sumTag.textContent=`${G.idx}/10`;
+
+  if(G.idx>=10){
+    left.innerHTML=`<div class="all-ranked-msg"><div class="big">✓ All 10 Ranked!</div><p>Your ranking is locked in. Hit Submit or wait for the timer.</p><button class="btn btn-primary" style="margin-top:16px" onclick="doSubmit()">Submit Now</button></div>`;
+    return;
+  }
+
+  const item=G.items[G.idx];
+  const isPerson   = PERSON_CATS.has(G.cat);
+  const isDialogue = G.cat === 'dialogues';
+  const isSong     = G.cat === 'songs';
+  const isCharacter= G.cat === 'characters';
+
+  // Get works and fact for person categories — deduplicate works
+  const entry = isPerson ? (PERSON_WORKS[item] || null) : null;
+  const works = entry ? [...new Set(entry.works)] : [];
+  const fact  = entry ? entry.fact  : '';
+
+  // ── Display name + subtitle split logic ──
+  // All "Name – Source (year)" formatted entries: split at " – "
+  let displayName = item;
+  let displaySub  = '';
+
+  if((isSong || isCharacter || isDialogue) && item.includes('–')) {
+    const parts = item.split('–');
+    displayName = parts[0].trim();
+    displaySub  = parts.slice(1).join('–').trim();
+  }
+
+  // Build HTML sections
+  const worksHtml = works.length
+    ? `<div class="item-works"><div class="item-works-label">Notable Works</div><div class="item-works-list">${works.map(w=>`<span class="work-tag">${w}</span>`).join('')}</div></div>`
+    : '';
+  const factHtml = fact
+    ? `<div class="item-fact"><span class="fact-icon">💡</span> ${fact}</div>`
+    : '';
+  const subHtml = displaySub
+    ? `<div class="item-card-sub">${isSong?'🎵':isCharacter?'🎭':'🎬'} ${displaySub}</div>`
+    : '';
+
+  // Rank buttons
+  const btns=Array.from({length:10},(_,i)=>{
+    const r=i+1,taken=G.taken.has(r);
+    return `<button class="rank-btn${taken?' taken':''}" onclick="assignRank(${r})">${r}</button>`;
+  }).join('');
+
+  left.innerHTML=`
+    <div class="item-counter">Item ${G.idx+1} of 10</div>
+    <div class="item-card card-enter">
+      <div class="item-card-eyebrow">What rank does this deserve?</div>
+      <div class="item-card-name">${displayName}</div>
+      ${subHtml}
+      ${worksHtml}
+      ${factHtml}
+    </div>
+    <div>
+      <div class="rank-picker-label" style="margin-bottom:10px">Assign a rank — once set, it's locked 🔒</div>
+      <div class="rank-picker">${btns}</div>
+    </div>
+  `;
+}
+
+function assignRank(rank){
+  if(G.taken.has(rank)) return;
+  const item=G.items[G.idx];
+  G.rankMap[rank]=item;G.taken.add(rank);
+  addToSummary(item,rank);
+  G.idx++;
+  setTimeout(renderItem,100);
+}
+
+function buildPlaceholders(){
+  const el=document.getElementById('ranked-summary');el.innerHTML='';
+  for(let i=1;i<=10;i++){
+    const d=document.createElement('div');
+    d.className='ranked-ph';d.id='slot-'+i;
+    d.innerHTML=`<div class="ranked-ph-num">${i}</div><div class="ranked-ph-text">Empty</div>`;
+    el.appendChild(d);
+  }
+}
+
+function addToSummary(item,rank){
+  const el=document.getElementById('slot-'+rank);if(!el)return;
+  const cc=rank===1?'r1':rank===2?'r2':rank===3?'r3':'';
+  const d=document.createElement('div');
+  d.className='ranked-item';d.id='slot-'+rank;
+  d.innerHTML=`<div class="ranked-item-num ${cc}">${rank}</div><div class="ranked-item-text">${item}</div>`;
+  el.replaceWith(d);
+}
+
+// ======================================================
+// TIMER
+// ======================================================
+function startTimer(){
+  G.timeLeft=G.timePerRound;updateTimer();
+  clearInterval(G.timerInt);
+  G.timerInt=setInterval(()=>{G.timeLeft--;updateTimer();if(G.timeLeft<=0){clearInterval(G.timerInt);if(!G.submitted)autoSubmit();}},1000);
+}
+function updateTimer(){
+  const t=G.timeLeft;
+  document.getElementById('tr-num').textContent=t;
+  document.getElementById('tr-fill').style.strokeDashoffset=138.2*(1-t/G.timePerRound);
+  document.getElementById('tr-fill').style.stroke=t>20?'var(--red)':'#ff6b35';
+  document.getElementById('tr-num').style.color=t<=10?'var(--red)':'var(--text)';
+}
+function autoSubmit(){
+  for(let r=1;r<=10;r++){
+    if(!G.taken.has(r)&&G.idx<G.items.length){
+      const item=G.items[G.idx];
+      G.rankMap[r]=item;G.taken.add(r);addToSummary(item,r);G.idx++;
+    }
+  }
+  doSubmit(true);
+}
+function doSubmit(auto=false){
+  if(G.submitted)return;
+  clearInterval(G.timerInt);G.submitted=true;
+  const arr=new Array(10).fill('');
+  for(let r=1;r<=10;r++) arr[r-1]=G.rankMap[r]||'';
+  G.allRankings[G.myId]=arr;
+  if(!auto) addChat({type:'system',event:true,text:`✓ ${G.myName} submitted!`});
+  showWaiting();
+}
+
+// ======================================================
+// WAITING
+// ======================================================
+function showWaiting(){
+  const el=document.getElementById('wait-players');el.innerHTML='';
+  G.players.forEach(p=>{
+    const done=!!G.allRankings[p.id];
+    el.innerHTML+=`<div class="player-chip${done?' done':''}" id="wc-${p.id}">${done?'✓ ':'⏳ '}${p.name}</div>`;
+  });
+  show('waiting');pollWait();
+}
+function pollWait(){
+  if(G.players.every(p=>G.allRankings[p.id])) setTimeout(startVoting,700);
+  else setTimeout(pollWait,500);
+}
+
+// ======================================================
+// SIMULATE OTHERS
+// ======================================================
+function simulateOthers(){
+  Object.values(simT).forEach(clearTimeout);simT={};
+  G.players.filter(p=>p.id!==G.myId).forEach(p=>{
+    const delay=9000+Math.random()*36000;
+    simT[p.id]=setTimeout(()=>{
+      G.allRankings[p.id]=shuf([...G.items]);
+      const chip=document.getElementById('wc-'+p.id);
+      if(chip){chip.className='player-chip done';chip.textContent='✓ '+p.name;}
+      addChat({type:'system',event:true,text:`✓ ${p.name} submitted!`});
+    },delay);
+  });
+  const phrases=["Semma tough la 😅","Naan confirm #1 🔥","Engendha ranking?","Rowdy Baby first always!","Rajini sir marana mass!","Vera level da!","Enna da idhu 😂","Chennai 600028 podanum","Aiyo edha rank podu","Ore confusion da"];
+  G.players.filter(p=>p.id!==G.myId).forEach((p,i)=>{
+    setTimeout(()=>addChat({type:'chat',sender:p.name,senderId:p.id,text:phrases[0|Math.random()*phrases.length]}),7000+i*10000+Math.random()*8000);
+  });
+}
+
+// ======================================================
+// CHAT
+// ======================================================
+function addChat(msg){
+  G.chatMsgs.push(msg);
+  const el=document.getElementById('chat-msgs');if(!el)return;
+  const d=document.createElement('div');
+  if(msg.type==='system'){d.className='chat-msg system'+(msg.event?' event':'');d.textContent=msg.text;}
+  else{const isMe=msg.senderId===G.myId,col=colOf(msg.senderId||'x');d.className='chat-msg';d.innerHTML=`<span class="sender" style="color:${col}">${isMe?'You':msg.sender}: </span>${msg.text}`;}
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+}
+function chatKey(e){if(e.key==='Enter')sendChat();}
+function sendChat(){const inp=document.getElementById('chat-inp'),t=inp.value.trim();if(!t)return;inp.value='';addChat({type:'chat',sender:G.myName,senderId:G.myId,text:t});}
+
+// ======================================================
+// RESULTS
+// ======================================================
+// ======================================================
+// ======================================================
+// RESULTS — simultaneous reveal (makeitmeme style)
+// G.voteLabels  — { playerId: 'A'/'B'/... } anonymous labels
+// G.myVotes     — { playerId: score } scores I gave
+// G.lockedIn    — Set of playerIds who locked scores
+// ======================================================
+
+function startVoting(){
+  G.voteLabels = {};
+  G.myVotes    = {};
+  G.lockedIn   = new Set();
+
+  const lbl    = CATS.find(c=>c.id===G.cat)?.label || G.cat;
+  const order  = shuf([...G.players]);
+  const labels = 'ABCDEFGHIJ'.split('');
+  order.forEach((p,i) => { G.voteLabels[p.id] = labels[i]; });
+
+  // Header
+  document.getElementById('res-rnd').textContent  = `Round ${G.round} of ${G.rounds}`;
+  document.getElementById('res-cat').textContent  = lbl;
+  document.getElementById('res-prog').style.width = ((G.round/G.rounds)*100)+'%';
+  document.getElementById('next-btn').textContent = G.round>=G.rounds ? '🏆 Final Results' : 'Next Round →';
+  document.getElementById('next-btn').style.display    = 'none';
+  document.getElementById('lock-btn').style.display    = 'block';
+  document.getElementById('lock-waiting').style.display= 'none';
+  document.getElementById('res-scores-left').style.display = 'none';
+
+  // Build all cards simultaneously
+  const grid = document.getElementById('res-grid');
+  grid.innerHTML = '';
+  const othersToScore = order.filter(p => p.id !== G.myId);
+  updateScoreStatus(0, othersToScore.length);
+
+  order.forEach((player, i) => {
+    const ranking = G.allRankings[player.id] || [];
+    const isMe    = player.id === G.myId;
+    const label   = G.voteLabels[player.id];
+
+    const card = document.createElement('div');
+    card.className = 'result-card';
+    card.id = `rcard-${player.id}`;
+    card.style.animationDelay = (i * 0.08) + 's';
+
+    card.innerHTML = `
+      <div class="result-card-header">
+        <div class="result-player-label">
+          Player ${label}
+          ${isMe ? '<span class="tag tag-gold" style="margin-left:6px">You</span>' : ''}
+        </div>
+        ${isMe
+          ? '<span style="font-size:0.72rem;color:var(--muted)">Your ranking</span>'
+          : `<span class="tag tag-gold" id="score-badge-${player.id}" style="font-size:0.78rem;min-width:48px;text-align:center">—</span>`
+        }
+      </div>
+      <div class="result-list">
+        ${ranking.map((item,j) => `
+          <div class="result-item">
+            <div class="result-rank${j===0?' r1':j===1?' r2':j===2?' r3':''}">${j+1}</div>
+            <div style="font-size:0.82rem">${item||'—'}</div>
+          </div>`).join('')}
+      </div>
+      ${isMe ? '' : `
+        <div class="result-footer" id="slider-area-${player.id}">
+          <div style="font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">Your score</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:0.8rem;color:var(--muted)">1</span>
+            <input type="range" min="1" max="10" value="5"
+              id="slider-${player.id}"
+              style="flex:1;accent-color:var(--red);cursor:pointer;height:5px"
+              oninput="onSliderMove('${player.id}',this.value)">
+            <span style="font-size:0.8rem;color:var(--muted)">10</span>
+            <span id="sliderval-${player.id}"
+              style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--gold);min-width:28px;text-align:center;line-height:1">5</span>
+          </div>
+        </div>`}
+    `;
+    grid.appendChild(card);
+  });
+
+  show('results');
+
+  // Simulate others locking in after 4–9s
+  G.players.filter(p => p.id !== G.myId).forEach(p => {
+    setTimeout(() => simPlayerLock(p), 4000 + Math.random() * 5000);
+  });
+}
+
+function onSliderMove(pid, val){
+  document.getElementById(`sliderval-${pid}`).textContent = val;
+  document.getElementById(`score-badge-${pid}`).textContent = val + '/10';
+  G.myVotes[pid] = parseInt(val);
+  const others = G.players.filter(p => p.id !== G.myId);
+  const scored = others.filter(p => G.myVotes[p.id] !== undefined).length;
+  updateScoreStatus(scored, others.length);
+}
+
+function updateScoreStatus(scored, total){
+  document.getElementById('res-score-status').textContent = `${scored} / ${total} scored`;
+}
+
+function lockScores(){
+  // Check all others are scored
+  const others  = G.players.filter(p => p.id !== G.myId);
+  const unscored = others.filter(p => G.myVotes[p.id] === undefined);
+
+  if(unscored.length > 0){
+    // Auto-fill unscored with current slider value (5)
+    unscored.forEach(p => {
+      const sl = document.getElementById(`slider-${p.id}`);
+      const v  = sl ? parseInt(sl.value) : 5;
+      G.myVotes[p.id] = v;
+      document.getElementById(`sliderval-${p.id}`).textContent = v;
+      document.getElementById(`score-badge-${p.id}`).textContent = v + '/10';
+    });
+  }
+
+  // Add scores to G.scores
+  others.forEach(p => {
+    G.scores[p.id] = (G.scores[p.id]||0) + (G.myVotes[p.id]||5);
+  });
+
+  // Disable all sliders
+  others.forEach(p => {
+    const sl = document.getElementById(`slider-${p.id}`);
+    if(sl) sl.disabled = true;
+    const area = document.getElementById(`slider-area-${p.id}`);
+    if(area) area.style.opacity = '0.5';
+  });
+
+  G.lockedIn.add(G.myId);
+  document.getElementById('lock-btn').style.display     = 'none';
+  document.getElementById('lock-waiting').style.display = 'block';
+  updateLockChips();
+  checkAllLocked();
+}
+
+function simPlayerLock(player){
+  if(G.lockedIn.has(player.id)) return;
+  // Give random scores to everyone except themselves
+  G.players.filter(p => p.id !== player.id).forEach(p => {
+    G.scores[p.id] = (G.scores[p.id]||0) + (3 + (0|Math.random()*8));
+  });
+  G.lockedIn.add(player.id);
+  updateLockChips();
+  checkAllLocked();
+}
+
+function updateLockChips(){
+  const el = document.getElementById('lock-chips');
+  if(!el) return;
+  el.innerHTML = [...G.lockedIn].map(id => {
+    const p = G.players.find(x=>x.id===id);
+    const name = id===G.myId ? 'You' : (p?p.name:'?');
+    return `<span class="player-chip done" style="font-size:0.76rem;padding:5px 12px">🔒 ${name}</span>`;
+  }).join('');
+}
+
+function checkAllLocked(){
+  if(G.lockedIn.size >= G.players.length){
+    setTimeout(()=>{
+      document.getElementById('next-btn').style.display = 'block';
+      document.getElementById('lock-waiting').style.display = 'none';
+    }, 600);
+  }
+}
+
+function nextRound(){
+  if(G.round>=G.rounds) showLeaderboard();
+  else beginNextRound();
+}
+
+function showResults(){ startVoting(); }
+function toggleHeart(){}
+function giveScore(){}
+function toggleHearts(){}
+function buildHeartsPanel(){}
+function showLeaderboard(){
+  document.getElementById('lb-info').textContent=`${G.rounds} rounds • ${G.players.length} players`;
+  const sorted=[...G.players].sort((a,b)=>(G.scores[b.id]||0)-(G.scores[a.id]||0));
+  const el=document.getElementById('lb-list');el.innerHTML='';
+  const medals=['🥇','🥈','🥉'];
+  sorted.forEach((p,i)=>{
+    const r=i+1,sc=G.scores[p.id]||0,col=colOf(p.id);
+    const d=document.createElement('div');
+    d.className=`lb-item${r===1?' top1':r===2?' top2':r===3?' top3':''}`;
+    d.style.animationDelay=(i*0.1)+'s';
+    d.innerHTML=`<div class="lb-rank${r<=3?' r'+r:''}">${medals[r-1]||r}</div><div><div class="lb-name" style="color:${col}">${p.name}${p.id===G.myId?' <span class="tag tag-gold">You</span>':''}</div><div style="font-size:0.72rem;color:var(--muted)">${p.isHost?'👑 Host':''}</div></div><div style="text-align:right"><div class="lb-score">${sc}</div><div class="lb-score-lbl">pts</div></div>`;
+    el.appendChild(d);
+  });
+  show('leaderboard');
+}
+function playAgain(){Object.keys(G.scores).forEach(id=>G.scores[id]=0);G.usedCats=[];G.allHearts=[];G.chatMsgs=[];setupLobby();}
+function goHome(){Object.values(simT).forEach(clearTimeout);simT={};G={roomCode:'',myName:'',myId:'',isHost:false,players:[],rounds:5,timePerRound:60,selectedCats:['actors','movies','songs'],round:0,cat:'',items:[],idx:0,rankMap:{},taken:new Set(),allRankings:{},scores:{},allHearts:{},timerInt:null,timeLeft:60,chatMsgs:[],submitted:false,usedCats:[]};show('landing');}
+</script>
+</body>
+</html>
